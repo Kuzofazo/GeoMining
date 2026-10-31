@@ -1,0 +1,5 @@
+{
+  "name": "G-MEC Voice Agent",
+  "description": "Production-ready Voice AI for Geo-Mining and Environmental Consultancy Inc. handling appointments, inquiries, and lead qualification.",
+  "requestFramePermissions": ["microphone"]
+}

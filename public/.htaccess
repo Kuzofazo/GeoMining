@@ -1,0 +1,154 @@
+# ============================================================
+# GeoMining EC - Apache Cache Control & SPA Routing
+# Optimized for HostGator (Apache/LiteSpeed)
+# ============================================================
+
+# -------------------------------------------------------
+# 0. LITESPEED CACHE OVERRIDE
+# -------------------------------------------------------
+<IfModule LiteSpeed>
+  # Disable LiteSpeed Cache for the entire site
+  CacheDisable public /
+  # Specifically ensure sw.js and version.json are never LiteSpeed-cached
+  CacheLookup off
+</IfModule>
+
+# -------------------------------------------------------
+# 1. ENABLE REWRITE ENGINE (SPA Routing)
+# -------------------------------------------------------
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Always serve files in /Present/ directly (never rewrite to SPA)
+  RewriteRule ^Present/ - [L]
+
+  # Serve existing files/directories as-is
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+
+  # All other routes -> index.html (React Router handles routing)
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# -------------------------------------------------------
+# 2. CACHE CONTROL HEADERS
+# -------------------------------------------------------
+<IfModule mod_headers.c>
+
+  # --- HTML files: NEVER cache (always fetch fresh from server) ---
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+  </FilesMatch>
+
+  # --- Root path: NEVER cache ---
+  # (Handled by the HTML rule above since index.html is served)
+
+  # --- Service Worker & Version Manifest: NEVER cache (must always be re-fetched) ---
+  <FilesMatch "^(sw\.js|version\.json|manifest\.json)$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+    Header set Service-Worker-Allowed "/"
+  </FilesMatch>
+
+  # --- Hashed JS & CSS assets in /assets/ ONLY: Cache 1 year ---
+  # IMPORTANT: Use <FilesMatch> inside <DirectoryMatch> so sw.js at the root
+  # is NOT matched here. sw.js is handled by the no-cache rule above.
+  # The specific FilesMatch for sw.js|version.json above takes precedence
+  # in Apache because it is declared first, but the DirectoryMatch approach
+  # below is more explicit and safer for LiteSpeed/HostGator.
+</IfModule>
+
+# Cache 1 year for hashed assets inside /assets/ — scoped to that dir only
+<IfModule mod_headers.c>
+  <If "%{REQUEST_URI} =~ m|^/assets/|">
+    <FilesMatch "\.(js|mjs|css|woff|woff2|ttf|otf|eot|png|jpg|jpeg|gif|svg|webp|avif|ico)$">
+      Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+  </If>
+</IfModule>
+
+<IfModule mod_headers.c>
+  # --- JSON / XML / TXT: Short cache, must revalidate ---
+  <FilesMatch "\.(json|xml|txt|webmanifest)$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+  </FilesMatch>
+
+  # --- Security Headers ---
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # --- CORS for /Present/ files (required for external document viewers) ---
+  <FilesMatch "\.(pdf|pptx|pptm|ppt|docx|xlsx)$">
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
+  </FilesMatch>
+
+</IfModule>
+
+# -------------------------------------------------------
+# 3. ETAG CONFIGURATION
+# -------------------------------------------------------
+<IfModule mod_headers.c>
+  # ETags enable revalidation: browser checks if resource changed
+  # (complements Cache-Control must-revalidate)
+  Header unset ETag
+</IfModule>
+FileETag MTime Size
+
+# -------------------------------------------------------
+# 4. GZIP COMPRESSION
+# -------------------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html
+  AddOutputFilterByType DEFLATE text/css
+  AddOutputFilterByType DEFLATE text/javascript
+  AddOutputFilterByType DEFLATE application/javascript
+  AddOutputFilterByType DEFLATE application/x-javascript
+  AddOutputFilterByType DEFLATE application/json
+  AddOutputFilterByType DEFLATE application/xml
+  AddOutputFilterByType DEFLATE text/xml
+  AddOutputFilterByType DEFLATE text/plain
+  AddOutputFilterByType DEFLATE image/svg+xml
+  AddOutputFilterByType DEFLATE font/woff
+  AddOutputFilterByType DEFLATE font/woff2
+  AddOutputFilterByType DEFLATE application/font-woff
+  AddOutputFilterByType DEFLATE application/font-woff2
+</IfModule>
+
+# -------------------------------------------------------
+# 5. MIME TYPES (ensures correct Content-Type for all assets)
+# -------------------------------------------------------
+<IfModule mod_mime.c>
+  AddType application/javascript          .js .mjs
+  AddType text/css                        .css
+  AddType image/svg+xml                   .svg
+  AddType image/webp                      .webp
+  AddType image/avif                      .avif
+  AddType font/woff                       .woff
+  AddType font/woff2                      .woff2
+  AddType application/json               .json
+  AddType application/manifest+json      .webmanifest
+  
+  # Document formats
+  AddType application/pdf                                                           .pdf
+  AddType application/vnd.openxmlformats-officedocument.presentationml.presentation .pptx
+  AddType application/vnd.openxmlformats-officedocument.wordprocessingml.document   .docx
+  AddType application/vnd.openxmlformats-officedocument.spreadsheetml.sheet         .xlsx
+</IfModule>
+
+# -------------------------------------------------------
+# 6. FORCE HTTPS (Redirect HTTP -> HTTPS)
+# -------------------------------------------------------
+<IfModule mod_rewrite.c>
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP_HOST} !^localhost [NC]
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+</IfModule>

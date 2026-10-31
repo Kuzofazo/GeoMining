@@ -1,0 +1,317 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  'https://yvvalbuxdgulauupuwuk.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2dmFsYnV4ZGd1bGF1dXB1d3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0MTc4MjYsImV4cCI6MjA5Mzk5MzgyNn0.DcRoRsKsiSB1x9LqT9XKromPGpbt29qODCKGn7MykQU'
+);
+
+const jobs = [
+  {
+    title: 'Lead Mining Engineer',
+    department: 'Mining Engineering',
+    location: 'Monrovia, Liberia',
+    type: 'Full-time',
+    description:
+      'We are seeking a highly experienced and results-driven Lead Mining Engineer to oversee mining projects, provide technical leadership, and ensure optimal mine design, planning, and operational efficiency. The ideal candidate will play a key role in delivering safe, cost-effective, and sustainable mining solutions.',
+    responsibilities: [
+      'Lead the design, planning, and optimization of mining operations (open pit and/or underground).',
+      'Develop mine plans, production schedules, and cost estimates.',
+      'Supervise and coordinate field operations, including drilling, blasting, and haulage activities.',
+      'Ensure compliance with safety, environmental, and regulatory standards.',
+      'Conduct feasibility studies and technical evaluations.',
+      'Analyze production data and recommend improvements for efficiency and cost reduction.',
+      'Liaise with clients, contractors, and regulatory authorities.',
+      'Mentor and supervise junior engineers and technical staff.',
+      'Contribute to proposal development and business growth initiatives.',
+    ],
+    requirements: [
+      'Bachelor’s or Master’s degree in Mining Engineering or a related field.',
+      'Minimum of 5 years of relevant experience in mining operations or consultancy.',
+      'Strong knowledge of mine planning software (e.g., Surpac, Datamine, MineSched, or similar).',
+      'Experience in both open pit and underground mining is an advantage.',
+      'In-depth understanding of health, safety, and environmental standards in mining.',
+      'Excellent leadership, analytical, and communication skills.',
+      'Professional certification or registration with a recognized engineering body is preferred.',
+    ],
+    skills: [
+      'Mine design and planning expertise',
+      'Project management and leadership',
+      'Strong analytical and problem-solving skills',
+      'Cost control and operational optimization',
+      'Effective communication and stakeholder engagement',
+      'Attention to detail and decision-making',
+    ],
+    offers: [
+      'Competitive salary and benefits package',
+      'Opportunity to work on high-impact mining projects',
+      'Professional development and career advancement',
+      'Collaborative and innovative work environment',
+    ],
+    deadline: '2026-05-30',
+  },
+  {
+    title: 'Administrative Manager',
+    department: 'Administration',
+    location: 'Monrovia, Liberia',
+    type: 'Full-time',
+    description:
+      'We are seeking a highly organized and proactive Administrative Manager to oversee the day-to-day administrative operations of the firm. The successful candidate will ensure smooth office management, support senior leadership, and enhance organizational efficiency.',
+    responsibilities: [
+      'Oversee and manage daily office operations and administrative functions.',
+      'Develop and implement administrative policies and procedures.',
+      'Supervise administrative staff, including reception, clerical, and support personnel.',
+      'Manage office budgets, procurement, and inventory of supplies.',
+      'Coordinate meetings, schedules, travel arrangements, and company events.',
+      'Maintain company records, files, and documentation systems.',
+      'Ensure compliance with company policies and relevant regulations.',
+      'Support HR functions such as recruitment coordination, onboarding, and staff records management.',
+      'Liaise with external vendors, service providers, and stakeholders.',
+    ],
+    requirements: [
+      'Bachelor’s degree in Business Administration, Management, or a related field.',
+      'Minimum of 5 years of relevant experience in administration or office management.',
+      'Strong knowledge of administrative systems and procedures.',
+      'Proficiency in Microsoft Office Suite and office management software.',
+      'Excellent organizational, leadership, and multitasking abilities.',
+      'Strong communication and interpersonal skills.',
+    ],
+    skills: [
+      'Leadership and team supervision',
+      'Organizational and time management skills',
+      'Problem-solving and decision-making',
+      'Attention to detail and accuracy',
+      'Confidentiality and professionalism',
+      'Effective communication',
+    ],
+    offers: [
+      'Competitive salary and benefits package',
+      'Supportive and professional work environment',
+      'Opportunities for career growth and development',
+      'Exposure to diverse consultancy operations',
+    ],
+    deadline: '2026-05-30',
+  },
+  {
+    title: 'IT and Media Specialist (3 Persons)',
+    department: 'IT & Media',
+    location: 'Monrovia, Liberia',
+    type: 'Full-time',
+    description:
+      'We are seeking a versatile and skilled IT and Media Specialist to manage the firm’s information technology systems and oversee digital media and communications. The ideal candidate will ensure efficient IT operations while enhancing the company’s online presence and media engagement, local, regional, and international competitiveness through contents that promotes positive branding and imaging.',
+    responsibilities: [
+      'Manage and maintain IT infrastructure, including networks, hardware, and software systems.',
+      'Provide technical support and troubleshooting for staff.',
+      'Ensure data security, backup, and system integrity.',
+      'Develop and manage the company’s website and digital platforms.',
+      'Create and manage digital content (graphics, videos, social media posts).',
+      'Oversee social media accounts and online branding strategies.',
+      'Support virtual meetings, presentations, and multimedia requirements.',
+      'Monitor and analyze digital engagement and performance metrics.',
+      'Stay updated on emerging IT and media trends and recommend improvements.',
+    ],
+    requirements: [
+      'Bachelor’s degree in information technology, media studies, or a related field. A master’s degree is an added advantage.',
+      'Minimum of 3–5 years of relevant experience in IT support and digital media management.',
+      'Proficiency in IT systems, networking, and cybersecurity basics.',
+      'Experience with content creation tools (e.g., Adobe Creative Suite, video editing software, etc.).',
+      'Familiarity with website management (e.g., WordPress or similar platforms).',
+      'Strong understanding of social media platforms and digital marketing strategies.',
+      'Excellent problem-solving and communication skills.',
+    ],
+    skills: [
+      'IT systems management and troubleshooting',
+      'Digital content creation and media management',
+      'Creativity and innovation',
+      'Strong analytical and organizational skills',
+      'Ability to multitask and meet deadlines',
+      'Effective communication and teamwork',
+    ],
+    offers: [
+      'Competitive salary and benefits package',
+      'Opportunity to work in a dynamic and innovative environment',
+      'Professional growth and development opportunities',
+      'Exposure to diverse consultancy projects',
+    ],
+    deadline: '2026-05-30',
+  },
+  {
+    title: 'Lead Environmentalist',
+    department: 'Environmental',
+    location: 'Monrovia, Liberia',
+    type: 'Full-time',
+    description:
+      'We are seeking a highly qualified and experienced Lead Environmentalist to oversee environmental assessments, sustainability strategies, and compliance monitoring across our projects. The ideal candidate will provide technical leadership, guide project teams, and ensure adherence to national and international environmental standards.',
+    responsibilities: [
+      'Lead and manage Environmental Impact Assessments (EIAs) and Environmental Management Plans (EMPs).',
+      'Provide expert advice on environmental policies, regulations, and best practices.',
+      'Supervise environmental monitoring and reporting activities.',
+      'Coordinate with government agencies, stakeholders, and clients on environmental matters.',
+      'Develop sustainability strategies and ensure integration into project design and execution.',
+      'Mentor and supervise junior environmental staff and consultants.',
+      'Prepare technical reports, proposals, and presentations.',
+    ],
+    requirements: [
+      'Master’s degree in Environmental Science, Environmental Engineering, or a related field.',
+      'Minimum of 5 years of relevant professional experience in environmental consultancy or related sectors.',
+      'Strong knowledge of environmental laws, regulations, and standards.',
+      'Proven experience leading EIAs and environmental compliance projects.',
+      'Excellent analytical, communication, and leadership skills.',
+      'Professional certification or membership in a recognized environmental body is an advantage.',
+    ],
+    skills: [
+      'Project management and leadership',
+      'Strong report writing and data analysis',
+      'Stakeholder engagement and communication',
+      'Problem-solving and decision-making',
+      'Attention to detail and commitment to sustainability',
+    ],
+    offers: [
+      'Competitive salary and benefits package',
+      'Opportunity to work on impactful environmental projects',
+      'Professional growth and development opportunities',
+      'Collaborative and innovative work environment',
+    ],
+    deadline: '2026-05-30',
+  },
+  {
+    title: 'Lead Geologist',
+    department: 'Geology',
+    location: 'Monrovia, Liberia',
+    type: 'Full-time',
+    description:
+      'We are seeking a skilled and experienced Lead Geologist to provide technical leadership in geological investigations, mineral exploration, and resource evaluation projects. The successful candidate will oversee field operations, interpret geological data, and guide project teams to ensure accurate and reliable outcomes.',
+    responsibilities: [
+      'Lead and manage geological exploration and evaluation projects.',
+      'Plan, supervise, and execute field mapping, sampling, and drilling programs.',
+      'Interpret geological, geochemical, and geophysical data.',
+      'Prepare geological reports, resource estimates, and technical documentation.',
+      'Ensure compliance with industry standards and regulatory requirements.',
+      'Liaise with clients, stakeholders, and regulatory authorities.',
+      'Mentor and supervise junior geologists and field staff.',
+      'Contribute to business development through proposal writing and client engagement.',
+    ],
+    requirements: [
+      'Bachelor’s or Master’s degree in Geology, Earth Sciences, or a related field.',
+      'Minimum of 5 years of relevant experience in mineral exploration or geological consultancy.',
+      'Strong knowledge of geological mapping, drilling techniques, and resource estimation.',
+      'Experience with geological software (e.g., GIS, modeling tools).',
+      'Excellent analytical, leadership, and communication skills.',
+      'Professional certification or membership in a recognized geological body is an advantage.',
+    ],
+    skills: [
+      'Strong technical and analytical skills',
+      'Leadership and team management',
+      'Project planning and execution',
+      'Report writing and presentation',
+      'Problem-solving and decision-making',
+      'Attention to detail',
+    ],
+    offers: [
+      'Competitive salary and benefits package',
+      'Opportunity to work on diverse and challenging projects',
+      'Career development and training opportunities',
+      'Supportive and professional work environment',
+    ],
+    deadline: '2026-05-30',
+  },
+  {
+    title: 'Security',
+    department: 'Security & Safety',
+    location: 'Monrovia, Liberia',
+    type: 'Full-time',
+    description:
+      'We are seeking a highly disciplined and experienced Security Officer to ensure the safety and protection of our personnel, assets, facilities, and operations. The ideal candidate will be responsible for maintaining a secure work environment, monitoring security procedures, and responding effectively to security-related incidents.',
+    responsibilities: [
+      'Monitor and secure company premises, staff, visitors, and property.',
+      'Conduct routine patrols and inspections of facilities and project sites.',
+      'Control access to company premises and verify identification of visitors and staff.',
+      'Respond promptly to security incidents, emergencies, or suspicious activities.',
+      'Prepare and maintain accurate security reports and incident records.',
+      'Coordinate with local law enforcement and emergency services when necessary.',
+      'Ensure compliance with company safety and security policies and procedures.',
+      'Monitor surveillance systems, alarms, and other security equipment.',
+      'Provide security support during company events, field operations, and project activities.',
+    ],
+    requirements: [
+      'High school diploma or equivalent; additional security training or certification is an advantage.',
+      'Minimum of 3 years of relevant experience in security services, law enforcement, or a related field.',
+      'Strong knowledge of security procedures, emergency response, and access control systems.',
+      'Ability to remain calm and professional under pressure.',
+      'Good physical fitness and alertness.',
+      'Strong communication and observation skills.',
+      'Prior experience in corporate, industrial, or project-site security is an advantage.',
+    ],
+    skills: [
+      'Vigilance and attention to detail',
+      'Conflict resolution and problem-solving',
+      'Emergency response and incident management',
+      'Strong communication and interpersonal skills',
+      'Integrity, discipline, and professionalism',
+      'Ability to work independently and as part of a team',
+    ],
+    offers: [
+      'Competitive salary and benefits package',
+      'Professional and supportive work environment',
+      'Opportunities for career growth and development',
+      'Training and capacity-building opportunities',
+      'Opportunity to contribute to the safety and success of impactful projects',
+    ],
+    deadline: '2026-05-30',
+  },
+  {
+    title: 'Maintenance Personnel',
+    department: 'Operations & Maintenance',
+    location: 'Monrovia, Liberia',
+    type: 'Full-time',
+    description:
+      'We are seeking a skilled and reliable Maintenance Personnel to oversee the maintenance, repair, and proper functioning of company facilities, equipment, and operational systems. The ideal candidate will ensure that all company assets and infrastructure are maintained in safe and efficient working condition to support smooth daily operations.',
+    responsibilities: [
+      'Conduct routine inspections and maintenance of company facilities, equipment, and systems.',
+      'Perform preventive and corrective maintenance on electrical, plumbing, mechanical, and general building systems.',
+      'Identify and troubleshoot maintenance issues and implement timely repairs.',
+      'Ensure all maintenance activities comply with safety regulations and company standards.',
+      'Maintain records of maintenance work, repairs, and inspections.',
+      'Monitor and report the condition of equipment and recommend replacements when necessary.',
+      'Coordinate with external contractors and service providers when required.',
+      'Respond promptly to maintenance emergencies and operational breakdowns.',
+      'Assist in maintaining a clean, safe, and organized work environment.',
+    ],
+    requirements: [
+      'High school diploma or equivalent; technical or vocational training in maintenance, electrical, plumbing, or mechanical systems is an advantage.',
+      'Minimum of 3 years of relevant experience in facility maintenance or a related field.',
+      'Basic knowledge of electrical, plumbing, carpentry, and mechanical systems.',
+      'Ability to use maintenance tools and equipment safely and effectively.',
+      'Strong troubleshooting and problem-solving skills.',
+      'Good physical condition and ability to handle manual tasks.',
+      'Prior experience in industrial, corporate, or project-site maintenance is an advantage.',
+    ],
+    skills: [
+      'Technical and mechanical aptitude',
+      'Problem-solving and troubleshooting',
+      'Time management and organization',
+      'Attention to detail and safety awareness',
+      'Strong communication and teamwork skills',
+      'Reliability, discipline, and professionalism',
+    ],
+    offers: [
+      'Competitive salary and benefits package',
+      'Professional and supportive work environment',
+      'Opportunities for career growth and technical development',
+      'Training and capacity-building opportunities',
+      'Opportunity to contribute to the efficiency and success of impactful projects',
+    ],
+    deadline: '2026-05-30',
+  },
+];
+
+async function seed() {
+  console.log('Seeding jobs...');
+  const { data, error } = await supabase.from('jobs').insert(jobs);
+  if (error) {
+    console.error('Error seeding:', error);
+  } else {
+    console.log('Success! Jobs seeded.');
+  }
+}
+
+seed();

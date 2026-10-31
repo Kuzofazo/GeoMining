@@ -1,0 +1,40 @@
+# =====================================================
+# GeoMining EC - Netlify Cache & Security Headers
+# =====================================================
+
+# Hashed Vite assets: cache for 1 year (immutable)
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Service Worker: NEVER cache — must always be re-fetched
+# so the browser's SW update algorithm detects new versions.
+/sw.js
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0
+  Pragma: no-cache
+  Service-Worker-Allowed: /
+
+# Version manifest: NEVER cache — the update checker reads this
+# on every poll to detect new deployments.
+/version.json
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0
+  Pragma: no-cache
+
+# manifest.json: no-cache (PWA installs need the latest)
+/manifest.json
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0
+  Pragma: no-cache
+
+# HTML files and root: always fetch fresh
+/*.html
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0
+  Pragma: no-cache
+
+/
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0
+  Pragma: no-cache
+
+# All other assets: fall through to Netlify defaults
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin

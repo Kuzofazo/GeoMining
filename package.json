@@ -1,0 +1,51 @@
+{
+  "name": "geo-mining",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint \"**/*.{ts,tsx,js,jsx}\"",
+    "lint:fix": "eslint \"**/*.{ts,tsx,js,jsx}\" --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "deploy": "node scripts/deploy.js"
+  },
+  "dependencies": {
+    "@emailjs/browser": "^4.4.1",
+    "@google/genai": "^1.38.0",
+    "@supabase/supabase-js": "^2.105.4",
+    "@types/leaflet": "^1.9.21",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.561.0",
+    "qrcode.react": "^4.2.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-helmet-async": "^2.0.5",
+    "react-leaflet": "^5.0.0",
+    "react-router-dom": "^6.30.3",
+    "recharts": "^3.8.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/node": "^22.14.0",
+    "@typescript-eslint/eslint-plugin": "^8.50.1",
+    "@typescript-eslint/parser": "^8.50.1",
+    "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.4.23",
+    "basic-ftp": "^6.2.4",
+    "dotenv": "^18.0.9",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "postcss": "^8.5.6",
+    "prettier": "^3.7.4",
+    "sharp": "^0.35.1",
+    "tailwindcss": "^4.1.18",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

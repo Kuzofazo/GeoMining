@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoMining Portal</title>
+    <script type="text/javascript">
+      // SPA deep-link fix for Apache hosts.
+      // The .htaccess RewriteRule already handles most cases, but if a 404
+      // slips through (e.g. first deploy before .htaccess is active), this
+      // restores the original path via history.replaceState so React Router
+      // picks it up correctly on mount — no visible redirect flash.
+      (function() {
+        var path = window.location.pathname + window.location.search + window.location.hash;
+        var search = window.location.search;
+        // Pass path as a query param to index.html then restore with replaceState
+        var redirectUrl = '/index.html?__spa=' + encodeURIComponent(path) + (search ? '&' + search.slice(1) : '');
+        window.location.replace(redirectUrl);
+      })();
+    </script>
+  </head>
+  <body>
+    Loading...
+  </body>
+</html>
+

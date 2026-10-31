@@ -1,0 +1,60 @@
+
+<!-- G-MEC Voice Agent Embed Code -->
+<div id="gmec-voice-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-family: 'Inter', sans-serif;">
+    <!-- Floating Button -->
+    <button id="gmec-launcher" style="width: 60px; height: 60px; border-radius: 50%; background: #2563eb; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4); display: flex; align-items: center; justify-content: center; transition: all 0.3s ease;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>
+    </button>
+
+    <!-- Chat Window Container -->
+    <div id="gmec-window" style="display: none; position: absolute; bottom: 80px; right: 0; width: 380px; height: 600px; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; transition: all 0.3s ease; transform-origin: bottom right;">
+        <div style="background: #2563eb; padding: 16px; display: flex; align-items: center; justify-content: space-between; color: white;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold;">G</div>
+                <span style="font-weight: 600; font-size: 14px;">G-MEC Voice Agent</span>
+            </div>
+            <button id="gmec-close" style="background: none; border: none; color: white; cursor: pointer; font-size: 20px;">&times;</button>
+        </div>
+        <iframe src="https://geominingec.netlify.app/" style="width: 100%; height: calc(100% - 64px); border: none;" allow="microphone"></iframe>
+    </div>
+</div>
+
+<script>
+(function() {
+    const launcher = document.getElementById('gmec-launcher');
+    const windowEl = document.getElementById('gmec-window');
+    const closeBtn = document.getElementById('gmec-close');
+    let isOpen = false;
+
+    launcher.addEventListener('click', () => {
+        isOpen = !isOpen;
+        windowEl.style.display = isOpen ? 'block' : 'none';
+        launcher.style.transform = isOpen ? 'scale(0.9) rotate(45deg)' : 'scale(1) rotate(0deg)';
+        if(isOpen) {
+            windowEl.style.animation = 'gmec-slideIn 0.3s ease-out forwards';
+        }
+    });
+
+    closeBtn.addEventListener('click', () => {
+        isOpen = false;
+        windowEl.style.display = 'none';
+        launcher.style.transform = 'scale(1) rotate(0deg)';
+    });
+
+    // Add animation styles
+    const style = document.createElement('style');
+    style.innerHTML = `
+        @keyframes gmec-slideIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @media (max-width: 450px) {
+            #gmec-window {
+                width: calc(100vw - 40px);
+                height: 80vh;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+})();
+</script>

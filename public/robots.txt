@@ -1,0 +1,49 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /admin/careers
+
+# Explicit AI Search Engine, Answer Engine, and LLM Directives
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: Diffbot
+Allow: /
+
+User-agent: FacebookBot
+Allow: /
+
+Sitemap: https://geominingec.com/sitemap.xml
+
+# LLM Manifests for Answer Engine Optimization (AEO)
+# Markdown-formatted authority files for AI scrapers, RAG, and reasoning engines:
+# https://geominingec.com/llms.txt
+# https://geominingec.com/llms-full.txt
+
