@@ -94,7 +94,7 @@ export const CRMLogin: React.FC<CRMLoginProps> = ({ onLoginSuccess }) => {
             </div>
           )}
 
-          <form onSubmit={handleFormSubmit} className="space-y-5">
+          <form onSubmit={handleFormSubmit} className="space-y-5" autoComplete="off">
             <div>
               <label
                 htmlFor="crm-email"
@@ -109,10 +109,10 @@ export const CRMLogin: React.FC<CRMLoginProps> = ({ onLoginSuccess }) => {
                 />
                 <input
                   id="crm-email"
+                  name="crm_username"
                   type="email"
                   required
-                  autoComplete="username"
-                  autoFocus
+                  autoComplete="off"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#2d5a27] focus:ring-2 focus:ring-[#2d5a27]/20 focus:bg-white transition-all font-medium"
@@ -154,13 +154,14 @@ export const CRMLogin: React.FC<CRMLoginProps> = ({ onLoginSuccess }) => {
                 />
                 <input
                   id="crm-password"
+                  name="crm_user_password"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-10 pr-12 py-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#2d5a27] focus:ring-2 focus:ring-[#2d5a27]/20 focus:bg-white transition-all font-mono"
-                  placeholder="Enter your security passkey"
+                  placeholder="Enter your password"
                 />
                 <button
                   type="button"
