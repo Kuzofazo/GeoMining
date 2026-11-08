@@ -68,6 +68,19 @@ export interface RolePermissions {
 }
 
 export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
+  super_admin: {
+    canManageCompanies: true,
+    canApproveRegistrations: true,
+    canManageLicenses: true,
+    canApproveCompliance: true,
+    canManageClients: true,
+    canViewReports: true,
+    canExportData: true,
+    canManageUsers: true,
+    canDeleteRecords: true,
+    canViewAuditLogs: true,
+    canConfigureSettings: true,
+  },
   administrator: {
     canManageCompanies: true,
     canApproveRegistrations: true,
@@ -121,11 +134,11 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canConfigureSettings: false,
   },
   management: {
-    canManageCompanies: false,
-    canApproveRegistrations: false,
-    canManageLicenses: false,
-    canApproveCompliance: false,
-    canManageClients: false,
+    canManageCompanies: true,
+    canApproveRegistrations: true,
+    canManageLicenses: true,
+    canApproveCompliance: true,
+    canManageClients: true,
     canViewReports: true,
     canExportData: true,
     canManageUsers: false,
@@ -136,10 +149,15 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
 };
 
 export const ROLE_LABELS: Record<UserRole, { label: string; badgeColor: string; description: string }> = {
+  super_admin: {
+    label: 'Super Admin',
+    badgeColor: 'bg-rose-100 text-rose-800 border-rose-300',
+    description: 'Supreme unconstrained authority across IT infrastructure, governance, and cadastre management.',
+  },
   administrator: {
-    label: 'Executive Director / Admin',
+    label: 'Administrator',
     badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-    description: 'Full unconstrained system authority, governance, and audit oversight.',
+    description: 'Full operational administration, license approvals, and cadastre management.',
   },
   it_department: {
     label: 'IT & Security Department',
@@ -157,9 +175,9 @@ export const ROLE_LABELS: Record<UserRole, { label: string; badgeColor: string; 
     description: 'Mining license audits, EPA/MME statutory filings, obligations, and renewals.',
   },
   management: {
-    label: 'Senior Management & Board',
-    badgeColor: 'bg-slate-100 text-slate-800 border-slate-300',
-    description: 'High-level business intelligence, KPI dashboards, strategic reporting, and summaries.',
+    label: 'Executive Director & Board',
+    badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-300',
+    description: 'Executive leadership, KPI dashboards, strategic reporting, and directorate summaries.',
   },
 };
 
@@ -182,7 +200,28 @@ class CRMStore {
     this.companies = loadFromStorage(STORAGE_KEYS.COMPANIES, INITIAL_COMPANIES);
     this.licenses = loadFromStorage(STORAGE_KEYS.LICENSES, INITIAL_MINING_LICENSES);
     this.clients = loadFromStorage(STORAGE_KEYS.CLIENTS, INITIAL_CLIENTS);
-    this.users = loadFromStorage(STORAGE_KEYS.USERS, INITIAL_CRM_USERS);
+
+    // Load users and ensure official accounts from INITIAL_CRM_USERS are synced with correct credentials
+    const storedUsers = loadFromStorage<(CRMUser & { defaultPassword: string })[]>(STORAGE_KEYS.USERS, INITIAL_CRM_USERS);
+    const userMap = new Map<string, CRMUser & { defaultPassword: string }>();
+    INITIAL_CRM_USERS.forEach((u) => userMap.set(u.email.toLowerCase(), { ...u }));
+    storedUsers.forEach((u) => {
+      const official = userMap.get(u.email.toLowerCase());
+      if (official) {
+        userMap.set(u.email.toLowerCase(), {
+          ...u,
+          defaultPassword: official.defaultPassword,
+          role: official.role,
+          name: official.name,
+          department: official.department,
+        });
+      } else {
+        userMap.set(u.email.toLowerCase(), u);
+      }
+    });
+    this.users = Array.from(userMap.values());
+    saveToStorage(STORAGE_KEYS.USERS, this.users);
+
     this.auditLogs = loadFromStorage(STORAGE_KEYS.AUDIT_LOGS, INITIAL_AUDIT_LOGS);
     this.notifications = loadFromStorage(STORAGE_KEYS.NOTIFICATIONS, INITIAL_NOTIFICATIONS);
 
@@ -222,8 +261,13 @@ class CRMStore {
       return { success: false, error: 'This account has been suspended by IT Security.' };
     }
 
-    // Check password
-    if (user.defaultPassword !== passwordAttempt) {
+    // Check password with case-sensitive exact match, plus tolerate alternate double @@ for zwleh
+    const isPasswordValid =
+      user.defaultPassword === passwordAttempt ||
+      (user.email.toLowerCase() === 'zwleh@geominingec.com' &&
+        (passwordAttempt === 'ZKW@#GMEC1234' || passwordAttempt === 'ZKW@@#GMEC1234'));
+
+    if (!isPasswordValid) {
       return { success: false, error: 'Incorrect security password.' };
     }
 

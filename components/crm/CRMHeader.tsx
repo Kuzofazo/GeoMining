@@ -138,6 +138,7 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
                   <div className="space-y-1 mt-1">
                     {(
                       [
+                        'super_admin',
                         'administrator',
                         'it_department',
                         'registry_department',

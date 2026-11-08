@@ -1,6 +1,7 @@
 // CRM & Mining Regulatory Management Types for GEOMINING & Environmental Consultancy
 
 export type UserRole =
+  | 'super_admin'
   | 'administrator'
   | 'it_department'
   | 'registry_department'
