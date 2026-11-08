@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import SEO from '../components/SEO';
 import Logo from '../components/Logo';
 import {
@@ -13,6 +14,8 @@ import {
   RefreshCw,
   FileText,
   Layers,
+  Shield,
+  ArrowRight,
 } from 'lucide-react';
 
 const StaffPortal: React.FC = () => {
@@ -177,6 +180,39 @@ const StaffPortal: React.FC = () => {
                   </a>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Regulatory Cadastre & CRM System Launch Card */}
+        <div className="relative max-w-4xl mx-auto mb-14">
+          <div className="bg-gradient-to-r from-slate-900 via-slate-950 to-emerald-950 border border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl text-white">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 shadow-inner">
+                  <Shield size={28} />
+                </div>
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black uppercase tracking-widest mb-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Statutory Management System</span>
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                    GMEC Regulatory Cadastre &amp; CRM Portal
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-300 max-w-xl mt-1.5 leading-relaxed font-normal">
+                    Unified platform for Liberian mining license tracking, corporate registry dossiers, EPA &amp; MME compliance audits, client pipelines, and executive reporting.
+                  </p>
+                </div>
+              </div>
+
+              <Link
+                to="/crm"
+                className="inline-flex items-center gap-2.5 bg-[#2d5a27] hover:bg-emerald-600 text-white px-6 py-4 rounded-xl font-black text-xs uppercase tracking-wider transition-all shadow-xl shadow-emerald-950/40 hover:scale-105 shrink-0 border border-emerald-400/40 group"
+              >
+                <span>Launch CRM Cadastre</span>
+                <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform text-amber-400" />
+              </Link>
             </div>
           </div>
         </div>

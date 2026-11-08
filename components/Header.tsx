@@ -7,6 +7,7 @@ import {
   ChevronDown,
   Briefcase,
   Lock,
+  Shield,
 } from 'lucide-react';
 import Logo from './Logo';
 
@@ -130,6 +131,19 @@ const Header: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <Link
+              to="/crm"
+              className="inline-flex items-center gap-1.5 bg-emerald-950/50 hover:bg-emerald-900/70 text-emerald-200 hover:text-white px-2.5 py-0.5 sm:py-1 rounded-full border border-emerald-400/40 hover:border-emerald-300 transition-all font-bold tracking-normal shadow-sm group"
+            >
+              <Shield
+                size={10}
+                className="text-emerald-400 group-hover:scale-110 transition-transform"
+              />
+              <span className="text-[9px] sm:text-[10px] md:text-[11px]">
+                CRM Cadastre
+              </span>
+            </Link>
+
             <Link
               to="/staff-portal"
               className="inline-flex items-center gap-1.5 bg-black/25 hover:bg-black/40 text-white px-2.5 py-0.5 sm:py-1 rounded-full border border-white/20 hover:border-amber-400/60 transition-all font-bold tracking-normal shadow-sm group"
@@ -324,6 +338,15 @@ const Header: React.FC = () => {
 
             {/* Mobile-only Action Buttons */}
             <div className="pt-6 mt-2 pb-8 space-y-3">
+              <Link
+                to="/crm"
+                className="flex items-center justify-center gap-2 w-full bg-[#2d5a27] text-white py-3.5 rounded-xl font-black text-xs sm:text-sm uppercase tracking-widest shadow-md hover:bg-emerald-800 transition-all active:scale-95 border border-emerald-400/30"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Shield size={16} className="text-emerald-300" />
+                Regulatory CRM &amp; Cadastre
+              </Link>
+
               <Link
                 to="/careers"
                 className="flex items-center justify-center gap-2 w-full bg-amber-500 text-slate-900 py-3.5 rounded-xl font-black text-xs sm:text-sm uppercase tracking-widest shadow-md hover:bg-amber-600 transition-all active:scale-95"

@@ -40,6 +40,7 @@ import MiningLicensesPage from './pages/MiningLicensesPage';
 
 // Admin panel — lazy loaded (heavy, only used by admins)
 const CareersAdmin = React.lazy(() => import('./pages/CareersAdmin'));
+const CRMPage = React.lazy(() => import('./pages/CRMPage'));
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -76,6 +77,28 @@ const Website: React.FC = () => {
             </Suspense>
           }
         />
+        <Route
+          path="/crm"
+          element={
+            <Suspense
+              fallback={
+                <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white font-['Outfit',sans-serif]">
+                  <div className="text-center space-y-3">
+                    <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                    <p className="text-sm font-semibold tracking-wider uppercase text-slate-400">
+                      Loading Regulatory CRM &amp; Cadastre Portal…
+                    </p>
+                  </div>
+                </div>
+              }
+            >
+              <CRMPage />
+            </Suspense>
+          }
+        />
+        <Route path="/admin/crm" element={<Navigate to="/crm" replace />} />
+        <Route path="/cadastre" element={<Navigate to="/crm" replace />} />
+        <Route path="/regulatory-crm" element={<Navigate to="/crm" replace />} />
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/about-us" element={<Home />} />
