@@ -194,13 +194,6 @@ export const CRMLogin: React.FC<CRMLoginProps> = ({ onLoginSuccess }) => {
               )}
             </button>
           </form>
-
-          {/* Security Notice */}
-          <div className="mt-6 pt-5 border-t border-slate-100 text-center">
-            <p className="text-[11px] text-slate-500 leading-relaxed">
-              Protected by TLS 256-bit statutory encryption. Unauthorized access attempts are monitored and recorded in the GMEC audit logs.
-            </p>
-          </div>
         </div>
 
         {/* Back to Website link */}
