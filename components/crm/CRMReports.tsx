@@ -29,6 +29,7 @@ export const CRMReports: React.FC = () => {
   const licenses = crmService.getLicenses();
   const clients = crmService.getClients();
   const auditLogs = crmService.getAuditLogs();
+  const canExport = crmService.checkPermission('canExportData');
 
   const handlePrint = () => {
     window.print();
@@ -64,95 +65,102 @@ export const CRMReports: React.FC = () => {
       </div>
 
       {/* CSV Export Quick Action Cards (print:hidden) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print:hidden">
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:border-emerald-500 transition-all flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="p-2 bg-emerald-50 text-[#2d5a27] rounded-xl">
-                <Building2 size={18} />
+      {canExport ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print:hidden">
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:border-emerald-500 transition-all flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-emerald-50 text-[#2a602f] rounded-xl">
+                  <Building2 size={18} />
+                </div>
+                <span className="text-[10px] font-mono font-bold text-slate-500">
+                  {companies.length} Records
+                </span>
               </div>
-              <span className="text-[10px] font-mono font-bold text-slate-500">
-                {companies.length} Records
-              </span>
+              <h4 className="text-xs font-black text-slate-900 uppercase">Companies Cadastre</h4>
+              <p className="text-[11px] text-slate-500 mt-0.5">Registration numbers, TINs, directors, dates</p>
             </div>
-            <h4 className="text-xs font-black text-slate-900 uppercase">Companies Cadastre</h4>
-            <p className="text-[11px] text-slate-500 mt-0.5">Registration numbers, TINs, directors, dates</p>
+            <button
+              onClick={() => crmService.exportDataToCSV('companies')}
+              className="mt-3 w-full py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#2a602f] text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 border border-emerald-200 cursor-pointer"
+            >
+              <Download size={13} />
+              <span>Export CSV</span>
+            </button>
           </div>
-          <button
-            onClick={() => crmService.exportDataToCSV('companies')}
-            className="mt-3 w-full py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#2d5a27] text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 border border-emerald-200"
-          >
-            <Download size={13} />
-            <span>Export CSV</span>
-          </button>
-        </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:border-amber-500 transition-all flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
-                <FileCheck2 size={18} />
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:border-amber-500 transition-all flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+                  <FileCheck2 size={18} />
+                </div>
+                <span className="text-[10px] font-mono font-bold text-slate-500">
+                  {licenses.length} Records
+                </span>
               </div>
-              <span className="text-[10px] font-mono font-bold text-slate-500">
-                {licenses.length} Records
-              </span>
+              <h4 className="text-xs font-black text-slate-900 uppercase">Mining Licenses</h4>
+              <p className="text-[11px] text-slate-500 mt-0.5">12 categories, expirations, fees, coordinates</p>
             </div>
-            <h4 className="text-xs font-black text-slate-900 uppercase">Mining Licenses</h4>
-            <p className="text-[11px] text-slate-500 mt-0.5">12 categories, expirations, fees, coordinates</p>
+            <button
+              onClick={() => crmService.exportDataToCSV('licenses')}
+              className="mt-3 w-full py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 border border-amber-200 cursor-pointer"
+            >
+              <Download size={13} />
+              <span>Export CSV</span>
+            </button>
           </div>
-          <button
-            onClick={() => crmService.exportDataToCSV('licenses')}
-            className="mt-3 w-full py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 border border-amber-200"
-          >
-            <Download size={13} />
-            <span>Export CSV</span>
-          </button>
-        </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:border-blue-500 transition-all flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
-                <Users2 size={18} />
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:border-blue-500 transition-all flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                  <Users2 size={18} />
+                </div>
+                <span className="text-[10px] font-mono font-bold text-slate-500">
+                  {clients.length} Clients
+                </span>
               </div>
-              <span className="text-[10px] font-mono font-bold text-slate-500">
-                {clients.length} Clients
-              </span>
+              <h4 className="text-xs font-black text-slate-900 uppercase">Clients &amp; Pipeline</h4>
+              <p className="text-[11px] text-slate-500 mt-0.5">Investor profiles, contract values, stages</p>
             </div>
-            <h4 className="text-xs font-black text-slate-900 uppercase">Clients &amp; Pipeline</h4>
-            <p className="text-[11px] text-slate-500 mt-0.5">Investor profiles, contract values, stages</p>
+            <button
+              onClick={() => crmService.exportDataToCSV('clients')}
+              className="mt-3 w-full py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 border border-blue-200 cursor-pointer"
+            >
+              <Download size={13} />
+              <span>Export CSV</span>
+            </button>
           </div>
-          <button
-            onClick={() => crmService.exportDataToCSV('clients')}
-            className="mt-3 w-full py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 border border-blue-200"
-          >
-            <Download size={13} />
-            <span>Export CSV</span>
-          </button>
-        </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:border-purple-500 transition-all flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="p-2 bg-purple-50 text-purple-700 rounded-xl">
-                <ShieldCheck size={18} />
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:border-purple-500 transition-all flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-purple-50 text-purple-700 rounded-xl">
+                  <ShieldCheck size={18} />
+                </div>
+                <span className="text-[10px] font-mono font-bold text-slate-500">
+                  {auditLogs.length} Events
+                </span>
               </div>
-              <span className="text-[10px] font-mono font-bold text-slate-500">
-                {auditLogs.length} Events
-              </span>
+              <h4 className="text-xs font-black text-slate-900 uppercase">Security Audit Trail</h4>
+              <p className="text-[11px] text-slate-500 mt-0.5">Every login, edit, upload, and export event</p>
             </div>
-            <h4 className="text-xs font-black text-slate-900 uppercase">Security Audit Trail</h4>
-            <p className="text-[11px] text-slate-500 mt-0.5">Every login, edit, upload, and export event</p>
+            <button
+              onClick={() => crmService.exportDataToCSV('audit_logs')}
+              className="mt-3 w-full py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 border border-purple-200 cursor-pointer"
+            >
+              <Download size={13} />
+              <span>Export CSV</span>
+            </button>
           </div>
-          <button
-            onClick={() => crmService.exportDataToCSV('audit_logs')}
-            className="mt-3 w-full py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-800 text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 border border-purple-200"
-          >
-            <Download size={13} />
-            <span>Export CSV</span>
-          </button>
         </div>
-      </div>
+      ) : (
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs text-slate-500 flex items-center gap-2 print:hidden">
+          <ShieldCheck size={16} className="text-[#2a602f] shrink-0" />
+          <span>Executive Read-Only Reporting: Raw CSV dataset downloads are restricted to Super Administrator and IT infrastructure officers.</span>
+        </div>
+      )}
 
       {/* ─── Printable Formal Regulatory Dossier ─────────────────────────── */}
       <div className="bg-white border border-slate-200 rounded-3xl p-8 sm:p-12 shadow-sm space-y-8 print:border-none print:shadow-none print:p-0">

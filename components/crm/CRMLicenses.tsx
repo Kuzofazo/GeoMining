@@ -18,6 +18,7 @@ import {
   Coins,
   ShieldCheck,
   Compass,
+  MessageSquare,
 } from 'lucide-react';
 import { crmService } from '../../lib/crmService';
 import {
@@ -26,6 +27,7 @@ import {
   RenewalStatus,
   ComplianceObligation,
 } from '../../types/crm';
+import { RecordCommentsModal } from './RecordCommentsModal';
 
 const LIBERIAN_LICENSE_CATEGORIES: LiberianLicenseCategory[] = [
   'Class A – Industrial Mining License',
@@ -61,6 +63,7 @@ export const CRMLicenses: React.FC<CRMLicensesProps> = ({
   const [selectedLicense, setSelectedLicense] = useState<MiningLicense | null>(null);
   const [showIssueModal, setShowIssueModal] = useState(false);
   const [renewalModalLicense, setRenewalModalLicense] = useState<MiningLicense | null>(renewTargetLicense || null);
+  const [commentTargetLicense, setCommentTargetLicense] = useState<MiningLicense | null>(null);
 
   // Renewal Form State
   const [renewalExpiryDate, setRenewalExpiryDate] = useState(
@@ -325,8 +328,21 @@ export const CRMLicenses: React.FC<CRMLicensesProps> = ({
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
+                            onClick={() => setCommentTargetLicense(lic)}
+                            className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-[#2a602f] text-slate-700 font-bold text-xs transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+                            title="Observations & Inter-Departmental Notes"
+                          >
+                            <MessageSquare size={13} className="text-[#2a602f]" />
+                            <span>Notes</span>
+                            {crmService.getComments(lic.id).length > 0 && (
+                              <span className="px-1.5 py-0.2 rounded-full bg-[#ffc30d] text-slate-950 font-black text-[9px]">
+                                {crmService.getComments(lic.id).length}
+                              </span>
+                            )}
+                          </button>
+                          <button
                             onClick={() => setSelectedLicense(lic)}
-                            className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors flex items-center gap-1"
+                            className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors flex items-center gap-1 cursor-pointer"
                             title="Inspect Compliance & Details"
                           >
                             <Eye size={13} />
@@ -339,7 +355,7 @@ export const CRMLicenses: React.FC<CRMLicensesProps> = ({
                                 setRenewalModalLicense(lic);
                                 setRenewalFee(lic.statutoryFeeUSD);
                               }}
-                              className="px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-xs transition-colors flex items-center gap-1 border border-amber-200"
+                              className="px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-xs transition-colors flex items-center gap-1 border border-amber-200 cursor-pointer"
                               title="Renew License Expiration"
                             >
                               <RefreshCw size={12} />
@@ -350,7 +366,7 @@ export const CRMLicenses: React.FC<CRMLicensesProps> = ({
                           {canDelete && (
                             <button
                               onClick={() => handleDelete(lic.id)}
-                              className="p-1.5 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                              className="p-1.5 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
                               title="Delete License"
                             >
                               <Trash2 size={14} />
@@ -737,13 +753,13 @@ export const CRMLicenses: React.FC<CRMLicensesProps> = ({
                 <button
                   type="button"
                   onClick={() => setRenewalModalLicense(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold"
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black uppercase tracking-wider"
+                  className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black uppercase tracking-wider cursor-pointer"
                 >
                   Confirm Renewal
                 </button>
@@ -751,6 +767,18 @@ export const CRMLicenses: React.FC<CRMLicensesProps> = ({
             </form>
           </div>
         </div>
+      )}
+
+      {/* Record Observations & Comments Modal */}
+      {commentTargetLicense && (
+        <RecordCommentsModal
+          isOpen={true}
+          onClose={() => setCommentTargetLicense(null)}
+          recordId={commentTargetLicense.id}
+          recordType="license"
+          recordTitle={`${commentTargetLicense.category} (${commentTargetLicense.companyName})`}
+          recordReference={commentTargetLicense.licenseNumber}
+        />
       )}
     </div>
   );

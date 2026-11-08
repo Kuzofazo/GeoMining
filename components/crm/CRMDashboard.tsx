@@ -50,6 +50,12 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
   const metrics = crmService.getDashboardMetrics();
   const licenses = crmService.getLicenses();
   const auditLogs = crmService.getAuditLogs().slice(0, 5);
+  const currentUser = crmService.getCurrentUser();
+  const canManageCompanies = crmService.checkPermission('canManageCompanies');
+  const canManageLicenses = crmService.checkPermission('canManageLicenses');
+  const canExport = crmService.checkPermission('canExportData');
+  const failedLogins = crmService.getFailedLoginAttempts();
+  const securityAlerts = crmService.getSecurityAlerts().filter((a) => !a.acknowledged);
 
   // Expiring licenses within 60 days or expired
   const urgentLicenses = licenses.filter(
@@ -72,6 +78,34 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
+      {/* Super Admin Threat Alert Bar (if failed logins active) */}
+      {currentUser?.role === 'super_admin' && securityAlerts.length > 0 && (
+        <div
+          onClick={() => onSelectTab('security')}
+          className="bg-red-50 border border-red-300 rounded-3xl p-4 sm:p-5 shadow-sm flex items-center justify-between gap-4 cursor-pointer hover:bg-red-100/70 transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-red-600 text-white animate-pulse">
+              <AlertTriangle size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase tracking-wider text-red-900">
+                  Security Surveillance Active — {securityAlerts.length} Unacknowledged Alert{securityAlerts.length > 1 ? 's' : ''}
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-red-200 text-red-900 text-[10px] font-bold">
+                  {failedLogins.length} Total Telemetry Logs
+                </span>
+              </div>
+              <p className="text-xs text-red-700 mt-0.5 font-medium">
+                Unauthorized login attempts detected. Click here to open the Super Admin Security Dashboard.
+              </p>
+            </div>
+          </div>
+          <ArrowRight size={18} className="text-red-700 shrink-0" />
+        </div>
+      )}
+
       {/* Top Welcome & Quick Actions Bar */}
       <div className="bg-[#2a602f] border border-[#235027] rounded-3xl p-6 sm:p-8 shadow-xl text-white relative overflow-hidden">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
@@ -88,29 +122,53 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
             </p>
           </div>
 
-          {/* Action Buttons */}
+          {/* Action Buttons with Role Checking */}
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            <button
-              onClick={onOpenNewCompanyModal}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-[#2a602f] text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 border border-white/80"
-            >
-              <PlusCircle size={15} />
-              <span>Register Company</span>
-            </button>
-            <button
-              onClick={onOpenNewLicenseModal}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#ffc30d] hover:bg-[#e5ae0c] text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 border border-[#ffc30d]"
-            >
-              <FileCheck2 size={15} />
-              <span>Issue Mining License</span>
-            </button>
-            <button
-              onClick={() => onSelectTab('reports')}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/30 text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-sm"
-            >
-              <Download size={15} />
-              <span>Export Dossier</span>
-            </button>
+            {canManageCompanies ? (
+              <button
+                onClick={onOpenNewCompanyModal}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-[#2a602f] text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 border border-white/80 cursor-pointer"
+              >
+                <PlusCircle size={15} />
+                <span>Register Company</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => onSelectTab('companies')}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-[#2a602f] text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 border border-white/80 cursor-pointer"
+              >
+                <Building2 size={15} />
+                <span>Review Companies</span>
+              </button>
+            )}
+
+            {canManageLicenses ? (
+              <button
+                onClick={onOpenNewLicenseModal}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#ffc30d] hover:bg-[#e5ae0c] text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 border border-[#ffc30d] cursor-pointer"
+              >
+                <FileCheck2 size={15} />
+                <span>Issue Mining License</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => onSelectTab('licenses')}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#ffc30d] hover:bg-[#e5ae0c] text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 border border-[#ffc30d] cursor-pointer"
+              >
+                <FileCheck2 size={15} />
+                <span>Inspect Concessions</span>
+              </button>
+            )}
+
+            {canExport && (
+              <button
+                onClick={() => onSelectTab('reports')}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/30 text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-sm cursor-pointer"
+              >
+                <Download size={15} />
+                <span>Export Dossier</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

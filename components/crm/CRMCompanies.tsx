@@ -21,6 +21,8 @@ import {
   Shield,
   Clock,
   Sparkles,
+  MessageSquare,
+  Send,
 } from 'lucide-react';
 import { crmService } from '../../lib/crmService';
 import {
@@ -30,6 +32,7 @@ import {
   CompanyDirector,
   CompanyDocument,
 } from '../../types/crm';
+import { RecordCommentsModal } from './RecordCommentsModal';
 
 interface CRMCompaniesProps {
   initialSearch?: string;
@@ -42,6 +45,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
   const [selectedCompany, setSelectedCompany] = useState<CompanyRecord | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDocUploadModal, setShowDocUploadModal] = useState(false);
+  const [commentTargetCompany, setCommentTargetCompany] = useState<CompanyRecord | null>(null);
 
   // New Company Form State
   const [newCompany, setNewCompany] = useState({
@@ -350,8 +354,21 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
+                          onClick={() => setCommentTargetCompany(comp)}
+                          className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-[#2a602f] text-slate-700 font-bold text-xs transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+                          title="View and Add Observations"
+                        >
+                          <MessageSquare size={13} className="text-[#2a602f]" />
+                          <span>Notes</span>
+                          {crmService.getComments(comp.id).length > 0 && (
+                            <span className="px-1.5 py-0.2 rounded-full bg-[#ffc30d] text-slate-950 font-black text-[9px]">
+                              {crmService.getComments(comp.id).length}
+                            </span>
+                          )}
+                        </button>
+                        <button
                           onClick={() => setSelectedCompany(comp)}
-                          className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-[#2d5a27] hover:text-white text-slate-700 font-bold text-xs transition-colors flex items-center gap-1 shadow-sm"
+                          className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-[#2d5a27] hover:text-white text-slate-700 font-bold text-xs transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
                         >
                           <Eye size={13} />
                           <span>Dossier</span>
@@ -359,7 +376,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                         {canDelete && (
                           <button
                             onClick={() => handleDelete(comp.id)}
-                            className="p-1.5 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                            className="p-1.5 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
                             title="Delete Company Record"
                           >
                             <Trash2 size={14} />
@@ -407,38 +424,62 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
               </button>
             </div>
 
-            {/* Status Transition Control (for Registry Officers / Admins) */}
-            {canApprove && (
-              <div className="mt-4 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex flex-wrap items-center justify-between gap-3">
-                <span className="text-xs font-bold text-slate-700">Administrative Status Actions:</span>
+            {/* Status Transition Control & Observations Bar */}
+            <div className="mt-4 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCommentTargetCompany(selectedCompany)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-50 text-slate-800 hover:text-[#2a602f] text-xs font-bold transition-all border border-slate-300 shadow-sm cursor-pointer"
+                >
+                  <MessageSquare size={13} className="text-[#2a602f]" />
+                  <span>Observations &amp; Inter-Departmental Notes</span>
+                  <span className="px-1.5 py-0.2 rounded-full bg-[#ffc30d] text-slate-950 font-black text-[10px]">
+                    {crmService.getComments(selectedCompany.id).length}
+                  </span>
+                </button>
+              </div>
+
+              {canApprove && (
                 <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs font-bold text-slate-600 mr-1">Super Admin Actions:</span>
                   <button
                     onClick={() => handleStatusChange('active')}
-                    className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold"
+                    className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold cursor-pointer"
                   >
                     Mark Active / Approved
                   </button>
                   <button
                     onClick={() => handleStatusChange('under_review')}
-                    className="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold"
+                    className="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold cursor-pointer"
                   >
                     Put Under Review
                   </button>
                   <button
                     onClick={() => handleStatusChange('expired')}
-                    className="px-3 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold"
+                    className="px-3 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold cursor-pointer"
                   >
                     Flag Expired
                   </button>
                   <button
                     onClick={() => handleStatusChange('suspended')}
-                    className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-[11px] font-bold"
+                    className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-[11px] font-bold cursor-pointer"
                   >
                     Suspend Entity
                   </button>
                 </div>
-              </div>
-            )}
+              )}
+
+              {!canApprove && crmService.getCurrentUser()?.role === 'registry_department' && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleStatusChange('under_review')}
+                    className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-sm cursor-pointer"
+                  >
+                    Submit for Super Admin Review &amp; Approval
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Corporate Profile Details */}
             <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -811,13 +852,13 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                 <button
                   type="button"
                   onClick={() => setShowDocUploadModal(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 font-bold text-slate-600"
+                  className="px-4 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-emerald-600 text-white font-black uppercase tracking-wider"
+                  className="px-5 py-2 rounded-xl bg-emerald-600 text-white font-black uppercase tracking-wider cursor-pointer"
                 >
                   Upload &amp; Verify
                 </button>
@@ -825,6 +866,18 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
             </form>
           </div>
         </div>
+      )}
+
+      {/* Record Observations & Comments Modal */}
+      {commentTargetCompany && (
+        <RecordCommentsModal
+          isOpen={true}
+          onClose={() => setCommentTargetCompany(null)}
+          recordId={commentTargetCompany.id}
+          recordType="company"
+          recordTitle={commentTargetCompany.companyName}
+          recordReference={commentTargetCompany.registrationNumber}
+        />
       )}
     </div>
   );

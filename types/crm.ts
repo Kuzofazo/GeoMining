@@ -232,8 +232,31 @@ export interface AuditLogEntry {
   userId: string;
   userName: string;
   userRole: UserRole;
-  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'STATUS_CHANGE' | 'DOCUMENT_UPLOAD' | 'EXPORT' | 'LOGIN' | 'LOGOUT';
-  module: 'Company Registration' | 'Mining Licenses' | 'Compliance' | 'Client CRM' | 'User Management' | 'Reports' | 'Security';
+  action:
+    | 'CREATE'
+    | 'UPDATE'
+    | 'DELETE'
+    | 'STATUS_CHANGE'
+    | 'DOCUMENT_UPLOAD'
+    | 'EXPORT'
+    | 'LOGIN'
+    | 'LOGOUT'
+    | 'SECURITY_ALERT'
+    | 'ACCOUNT_LOCKOUT'
+    | 'ACCOUNT_UNLOCK'
+    | 'COMMENT_ADDED'
+    | 'BACKUP_EXPORT'
+    | 'BACKUP_RESTORE';
+  module:
+    | 'Company Registration'
+    | 'Mining Licenses'
+    | 'Compliance'
+    | 'Client CRM'
+    | 'User Management'
+    | 'Reports'
+    | 'Security'
+    | 'Comments'
+    | 'Disaster Recovery';
   targetRecordId?: string;
   targetRecordName?: string;
   details: string;
@@ -249,4 +272,78 @@ export interface SystemNotification {
   relatedModule?: string;
   relatedId?: string;
 }
+
+// ─── Advanced Security, Login Telemetry & RBAC Types ────────────────────────
+
+export interface FailedLoginAttempt {
+  id: string;
+  attemptedEmail: string;
+  timestamp: string; // ISO format
+  ipAddress: string;
+  userAgent: string;
+  browser: string;
+  os: string;
+  deviceType: 'Desktop' | 'Mobile' | 'Tablet' | 'Unknown';
+  approxLocation: string; // e.g., "Monrovia, Montserrado, Liberia"
+  approxLocationDisclaimer: string; // Statutory disclaimer regarding remote IP vs MAC address
+  reason: 'Invalid security credentials' | 'Account suspended' | 'Account locked by rate limiter' | 'Unrecognized email';
+  consecutiveFailures: number;
+  status: 'flagged' | 'rate_limited' | 'locked_out';
+}
+
+export interface SecurityAlert {
+  id: string;
+  timestamp: string;
+  severity: 'critical' | 'high' | 'warning';
+  title: string;
+  message: string;
+  targetEmail: string;
+  ipAddress: string;
+  approxLocation: string;
+  attemptCount: number;
+  acknowledged: boolean;
+  requiresAlarm: boolean;
+}
+
+export interface ActiveSession {
+  id: string;
+  userId: string;
+  userName: string;
+  userRole: UserRole;
+  email: string;
+  ipAddress: string;
+  browser: string;
+  deviceType: string;
+  approxLocation: string;
+  loginTime: string;
+  lastActiveTime: string;
+  isCurrentSession: boolean;
+}
+
+export interface AccountLockout {
+  email: string;
+  lockedAt: string;
+  expiresAt: string;
+  failedAttempts: number;
+  lockedBy: 'SYSTEM_RATE_LIMITER' | 'ADMIN_MANUAL';
+  reason: string;
+  clientIp: string;
+  location: string;
+}
+
+// ─── Record Comments & Observations ─────────────────────────────────────────
+
+export interface RecordComment {
+  id: string;
+  recordId: string;
+  recordType: 'company' | 'license' | 'compliance' | 'client';
+  recordReference: string; // e.g. "LBR-CORP-2026-0881" or "MEL-2026-091"
+  userId: string;
+  userName: string;
+  userRole: UserRole;
+  department: string;
+  timestamp: string;
+  content: string;
+}
+
 

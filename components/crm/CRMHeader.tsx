@@ -117,61 +117,95 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
 
           {/* Right: Role Switcher, Notifications & User Session */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Quick Role Switcher Pill */}
+            {/* Role Badge / Super Admin Switcher */}
             <div className="relative">
-              <button
-                onClick={() => setShowRoleMenu(!showRoleMenu)}
-                className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white text-slate-900 border border-slate-200 text-xs font-bold transition-all shadow-sm hover:bg-slate-50"
-                title="Switch active role for testing or administrative handover"
-              >
-                <Shield size={13} className="shrink-0 text-[#2a602f]" />
-                <span className="hidden xl:inline">{roleMeta.label}</span>
-                <span className="xl:hidden uppercase text-[10px]">{currentUser.role.replace('_', ' ')}</span>
-                <ChevronDown size={13} className="shrink-0 opacity-60" />
-              </button>
+              {currentUser.role === 'super_admin' ? (
+                <>
+                  <button
+                    onClick={() => setShowRoleMenu(!showRoleMenu)}
+                    className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white text-slate-900 border border-slate-200 text-xs font-bold transition-all shadow-sm hover:bg-slate-50 cursor-pointer"
+                    title="Super Admin Role Preview Switcher"
+                  >
+                    <Shield size={13} className="shrink-0 text-[#2a602f]" />
+                    <span className="hidden xl:inline">{roleMeta.label}</span>
+                    <span className="xl:hidden uppercase text-[10px]">Super Admin</span>
+                    <ChevronDown size={13} className="shrink-0 opacity-60" />
+                  </button>
 
-              {showRoleMenu && (
-                <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 z-50 text-slate-800 animate-in fade-in slide-in-from-top-2">
-                  <div className="px-3 py-2 border-b border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Switch Active System Role:
-                  </div>
-                  <div className="space-y-1 mt-1">
-                    {(
-                      [
-                        'super_admin',
-                        'administrator',
-                        'it_department',
-                        'registry_department',
-                        'compliance_officer',
-                        'management',
-                      ] as UserRole[]
-                    ).map((r) => {
-                      const isCurrent = currentUser.role === r;
-                      const meta = ROLE_LABELS[r];
-                      return (
-                        <button
-                          key={r}
-                          onClick={() => handleRoleChange(r)}
-                          className={`w-full flex items-start gap-2.5 px-3 py-2 rounded-xl text-left text-xs transition-colors ${
-                            isCurrent
-                              ? 'bg-emerald-50 text-[#2a602f] font-bold border border-emerald-200 shadow-sm'
-                              : 'text-slate-700 hover:bg-slate-50'
-                          }`}
-                        >
-                          <Shield size={14} className={`mt-0.5 shrink-0 ${isCurrent ? 'text-[#2a602f]' : 'text-slate-400'}`} />
-                          <div className="min-w-0">
-                            <div className="font-bold text-slate-900">{meta.label}</div>
-                            <div className="text-[10px] text-slate-500 truncate font-normal">
-                              {meta.description}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
+                  {showRoleMenu && (
+                    <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 z-50 text-slate-800 animate-in fade-in slide-in-from-top-2">
+                      <div className="px-3 py-2 border-b border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        Super Admin Role Preview:
+                      </div>
+                      <div className="space-y-1 mt-1">
+                        {(
+                          [
+                            'super_admin',
+                            'management',
+                            'administrator',
+                            'registry_department',
+                            'compliance_officer',
+                            'it_department',
+                          ] as UserRole[]
+                        ).map((r) => {
+                          const isCurrent = currentUser.role === r;
+                          const meta = ROLE_LABELS[r];
+                          return (
+                            <button
+                              key={r}
+                              onClick={() => handleRoleChange(r)}
+                              className={`w-full flex items-start gap-2.5 px-3 py-2 rounded-xl text-left text-xs transition-colors cursor-pointer ${
+                                isCurrent
+                                  ? 'bg-emerald-50 text-[#2a602f] font-bold border border-emerald-200 shadow-sm'
+                                  : 'text-slate-700 hover:bg-slate-50'
+                              }`}
+                            >
+                              <Shield size={14} className={`mt-0.5 shrink-0 ${isCurrent ? 'text-[#2a602f]' : 'text-slate-400'}`} />
+                              <div className="min-w-0">
+                                <div className="font-bold text-slate-900">{meta.label}</div>
+                                <div className="text-[10px] text-slate-500 truncate font-normal">
+                                  {meta.description}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div
+                  className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white text-slate-900 border border-slate-200 text-xs font-bold shadow-sm"
+                  title="Official Departmental Credential Role"
+                >
+                  <Shield size={13} className="shrink-0 text-[#2a602f]" />
+                  <span className="hidden xl:inline">{roleMeta.label}</span>
+                  <span className="xl:hidden uppercase text-[10px]">{currentUser.role.replace('_', ' ')}</span>
                 </div>
               )}
             </div>
+
+            {/* Super Admin Threat Surveillance Radar Button */}
+            {currentUser.role === 'super_admin' && (
+              <button
+                onClick={() => onSelectTab('security')}
+                className={`relative p-2 rounded-xl transition-colors shadow-sm flex items-center justify-center ${
+                  crmService.getFailedLoginAttempts().length > 0
+                    ? 'bg-rose-500 hover:bg-rose-600 text-white animate-pulse'
+                    : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
+                }`}
+                title="Super Admin Threat Monitoring & Failed Login Telemetry"
+                aria-label="Security Monitoring"
+              >
+                <Shield size={18} className="text-[#ffc30d]" />
+                {crmService.getFailedLoginAttempts().length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 border border-white text-white text-[9px] font-black flex items-center justify-center shadow-sm">
+                    {crmService.getFailedLoginAttempts().length}
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* Notifications Menu */}
             <div className="relative">

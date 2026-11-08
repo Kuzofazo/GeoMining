@@ -29,6 +29,47 @@ export const CRMPage: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // Automatic Session Inactivity Invalidation (30-minute timeout)
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const handleUserActivity = () => {
+      crmService.touchSessionActivity();
+    };
+
+    window.addEventListener('mousemove', handleUserActivity);
+    window.addEventListener('keydown', handleUserActivity);
+    window.addEventListener('click', handleUserActivity);
+
+    const intervalId = setInterval(() => {
+      const { expired } = crmService.checkSessionTimeout(30);
+      if (expired) {
+        alert('Security Notice: Your session has expired due to 30 minutes of inactivity. Please re-authenticate.');
+        setCurrentUser(null);
+      }
+    }, 30000);
+
+    return () => {
+      window.removeEventListener('mousemove', handleUserActivity);
+      window.removeEventListener('keydown', handleUserActivity);
+      window.removeEventListener('click', handleUserActivity);
+      clearInterval(intervalId);
+    };
+  }, [currentUser]);
+
+  // Enforce tab access per role (e.g. if Registry Department, cannot access Security or Licenses)
+  useEffect(() => {
+    if (!currentUser) return;
+    if (currentUser.role === 'registry_department' && activeTab !== 'dashboard' && activeTab !== 'companies') {
+      setActiveTab('dashboard');
+    } else if (
+      (currentUser.role === 'management' || currentUser.role === 'administrator') &&
+      activeTab === 'security'
+    ) {
+      setActiveTab('dashboard');
+    }
+  }, [currentUser, activeTab]);
+
   const handleLoginSuccess = () => {
     setCurrentUser(crmService.getCurrentUser());
   };

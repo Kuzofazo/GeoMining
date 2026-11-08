@@ -22,7 +22,7 @@ export const CRMLogin: React.FC<CRMLoginProps> = ({ onLoginSuccess }) => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -33,15 +33,18 @@ export const CRMLogin: React.FC<CRMLoginProps> = ({ onLoginSuccess }) => {
 
     setIsLoading(true);
 
-    setTimeout(() => {
-      const res = crmService.login(email.trim(), password);
+    try {
+      const res = await crmService.login(email.trim(), password);
       setIsLoading(false);
       if (res.success) {
         onLoginSuccess();
       } else {
-        setError(res.error || 'Invalid credentials. Please verify your email and password.');
+        setError(res.error || 'Authentication failed. Please verify your corporate email and password.');
       }
-    }, 400);
+    } catch {
+      setIsLoading(false);
+      setError('Security connection error. Please try again.');
+    }
   };
 
   return (

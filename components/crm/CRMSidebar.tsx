@@ -28,8 +28,10 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
   onClose,
 }) => {
   const metrics = crmService.getDashboardMetrics();
+  const currentUser = crmService.getCurrentUser();
+  const role = currentUser?.role || 'registry_department';
 
-  const navItems = [
+  const allNavItems = [
     {
       id: 'dashboard',
       label: 'Management Dashboard',
@@ -41,7 +43,7 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
     {
       id: 'companies',
       label: 'Company Registration',
-      subtitle: 'Corporate Cadastre & Directors',
+      subtitle: role === 'registry_department' ? 'Data Entry & Submission' : 'Corporate Cadastre & Directors',
       icon: Building2,
       badge: metrics.pendingCompanies > 0 ? `${metrics.pendingCompanies} Pending` : `${metrics.totalCompanies}`,
       badgeColor:
@@ -84,11 +86,30 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
     },
     {
       id: 'security',
-      label: 'Security & Accountability',
-      subtitle: 'RBAC Roles & Audit Trail',
+      label: 'Security & Access Control',
+      subtitle: 'Threat Surveillance & Telemetry',
       icon: ShieldAlert,
     },
   ];
+
+  // Enforce role-based module filtering
+  const navItems = allNavItems.filter((item) => {
+    if (role === 'super_admin' || role === 'it_department') {
+      return true; // Super admin has unrestricted access to every module
+    }
+    if (role === 'registry_department') {
+      // Registry department is restricted to Dashboard and Company Registration data entry only
+      return item.id === 'dashboard' || item.id === 'companies';
+    }
+    if (role === 'management' || role === 'administrator') {
+      // Executive Director and Administrator see dashboard oversight, company records, licenses, compliance, and reports (NO security module)
+      return item.id !== 'security';
+    }
+    if (role === 'compliance_officer') {
+      return item.id !== 'companies' && item.id !== 'security';
+    }
+    return true;
+  });
 
   return (
     <>
