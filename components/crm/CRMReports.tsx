@@ -55,9 +55,9 @@ export const CRMReports: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <button
             onClick={handlePrint}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2a602f] hover:bg-emerald-800 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95"
           >
-            <Printer size={15} className="text-amber-400" />
+            <Printer size={15} className="text-[#ffc30d]" />
             <span>Print Official Dossier</span>
           </button>
         </div>

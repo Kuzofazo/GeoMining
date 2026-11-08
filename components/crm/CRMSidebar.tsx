@@ -28,7 +28,6 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
   onClose,
 }) => {
   const metrics = crmService.getDashboardMetrics();
-  const currentUser = crmService.getCurrentUser();
 
   const navItems = [
     {
@@ -37,7 +36,7 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
       subtitle: 'KPIs & Expiration Radar',
       icon: LayoutDashboard,
       badge: metrics.urgentLicenses > 0 ? `${metrics.urgentLicenses} Urgent` : undefined,
-      badgeColor: 'bg-red-500/20 text-red-400 border border-red-500/40',
+      badgeColor: 'bg-red-50 text-red-700 border border-red-200',
     },
     {
       id: 'companies',
@@ -45,7 +44,10 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
       subtitle: 'Corporate Cadastre & Directors',
       icon: Building2,
       badge: metrics.pendingCompanies > 0 ? `${metrics.pendingCompanies} Pending` : `${metrics.totalCompanies}`,
-      badgeColor: metrics.pendingCompanies > 0 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' : 'bg-slate-800 text-slate-300',
+      badgeColor:
+        metrics.pendingCompanies > 0
+          ? 'bg-amber-50 text-amber-800 border border-amber-300'
+          : 'bg-slate-100 text-slate-600 border border-slate-200',
     },
     {
       id: 'licenses',
@@ -53,7 +55,7 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
       subtitle: '12 Statutory Categories',
       icon: FileCheck2,
       badge: `${metrics.totalLicenses} Total`,
-      badgeColor: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40',
+      badgeColor: 'bg-emerald-50 text-[#2a602f] border border-emerald-200 font-bold',
     },
     {
       id: 'compliance',
@@ -61,7 +63,10 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
       subtitle: 'EPA & MME Statutory Audits',
       icon: Scale,
       badge: `${metrics.complianceRate}% Rate`,
-      badgeColor: metrics.complianceRate >= 80 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-red-500/20 text-red-400 border border-red-500/40',
+      badgeColor:
+        metrics.complianceRate >= 80
+          ? 'bg-emerald-50 text-[#2a602f] border border-emerald-200 font-bold'
+          : 'bg-red-50 text-red-700 border border-red-200',
     },
     {
       id: 'clients',
@@ -69,7 +74,7 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
       subtitle: 'Pipeline & Engagements',
       icon: Users2,
       badge: `${metrics.totalClients}`,
-      badgeColor: 'bg-slate-800 text-slate-300',
+      badgeColor: 'bg-slate-100 text-slate-700 border border-slate-200',
     },
     {
       id: 'reports',
@@ -90,35 +95,37 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
       {/* Mobile Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
           onClick={onClose}
         />
       )}
 
       {/* Sidebar Panel */}
       <aside
-        className={`fixed lg:sticky top-16 sm:top-20 z-40 h-[calc(100vh-4rem)] sm:h-[calc(100vh-5rem)] w-72 sm:w-80 bg-slate-900 border-r border-slate-800 text-slate-300 flex flex-col justify-between transition-transform duration-300 ease-in-out shrink-0 overflow-y-auto ${
+        className={`fixed lg:sticky top-16 sm:top-20 z-40 h-[calc(100vh-4rem)] sm:h-[calc(100vh-5rem)] w-72 sm:w-80 bg-white border-r border-slate-200 text-slate-700 flex flex-col justify-between transition-transform duration-300 ease-in-out shrink-0 overflow-y-auto shadow-sm ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
         <div className="p-4 space-y-6">
           {/* Quick Concession Status Summary Pill */}
-          <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-3.5">
-            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 shadow-sm">
+            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-slate-500 mb-2">
               <span className="flex items-center gap-1.5">
-                <MapPin size={11} className="text-emerald-400" />
-                <span>Republic of Liberia</span>
+                <MapPin size={11} className="text-[#2a602f]" />
+                <span className="text-slate-700 font-bold">Republic of Liberia</span>
               </span>
-              <span className="text-emerald-400 font-bold">Cadastre Active</span>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-[#2a602f] border border-emerald-200 font-black text-[9px]">
+                Cadastre Active
+              </span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-center">
-              <div className="bg-slate-900 p-2 rounded-xl border border-slate-800">
-                <div className="text-base font-black text-white">{metrics.totalCompanies}</div>
-                <div className="text-[9px] text-slate-400 uppercase font-semibold">Registered Entities</div>
+              <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
+                <div className="text-base font-black text-slate-900">{metrics.totalCompanies}</div>
+                <div className="text-[9px] text-slate-500 uppercase font-bold tracking-tight">Registered Entities</div>
               </div>
-              <div className="bg-slate-900 p-2 rounded-xl border border-slate-800">
-                <div className="text-base font-black text-amber-400">{metrics.totalLicenses}</div>
-                <div className="text-[9px] text-slate-400 uppercase font-semibold">Active Licenses</div>
+              <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
+                <div className="text-base font-black text-[#2a602f]">{metrics.totalLicenses}</div>
+                <div className="text-[9px] text-slate-500 uppercase font-bold tracking-tight">Active Licenses</div>
               </div>
             </div>
           </div>
@@ -141,20 +148,20 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
                   }}
                   className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-left transition-all ${
                     isActive
-                      ? 'bg-gradient-to-r from-[#2d5a27] to-emerald-700 text-white font-bold shadow-lg shadow-emerald-950/50 border border-emerald-400/40'
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-white border border-transparent'
+                      ? 'bg-[#2a602f] text-white font-bold shadow-md shadow-emerald-950/20 border border-[#2a602f]'
+                      : 'text-slate-700 hover:bg-slate-50 hover:text-[#2a602f] border border-transparent'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <Icon
                       size={18}
-                      className={isActive ? 'text-amber-300 shrink-0' : 'text-slate-400 shrink-0'}
+                      className={isActive ? 'text-[#ffc30d] shrink-0' : 'text-slate-400 shrink-0'}
                     />
                     <div className="min-w-0">
                       <div className="text-xs font-bold leading-tight truncate">{item.label}</div>
                       <div
-                        className={`text-[10px] leading-tight truncate ${
-                          isActive ? 'text-emerald-100' : 'text-slate-400'
+                        className={`text-[10px] leading-tight truncate mt-0.5 ${
+                          isActive ? 'text-emerald-100 font-normal' : 'text-slate-500 font-normal'
                         }`}
                       >
                         {item.subtitle}
@@ -164,10 +171,10 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
 
                   {item.badge && (
                     <span
-                      className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${
+                      className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 shadow-sm ${
                         isActive
-                          ? 'bg-white/20 text-white'
-                          : item.badgeColor || 'bg-slate-800 text-slate-300'
+                          ? 'bg-[#ffc30d] text-slate-950'
+                          : item.badgeColor || 'bg-slate-100 text-slate-600 border border-slate-200'
                       }`}
                     >
                       {item.badge}
@@ -180,21 +187,21 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
         </div>
 
         {/* Bottom System & Public Link Box */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/40">
-          <div className="flex items-center justify-between text-[11px] text-slate-400 mb-2">
-            <span>Public Portal:</span>
+        <div className="p-4 border-t border-slate-200 bg-slate-50/70">
+          <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1.5">
+            <span className="font-medium">Public Portal:</span>
             <a
               href="/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-amber-400 hover:text-amber-300 flex items-center gap-1 font-bold"
+              className="text-[#2a602f] hover:underline flex items-center gap-1 font-bold"
             >
               <span>geominingec.com</span>
               <ExternalLink size={11} />
             </a>
           </div>
 
-          <div className="text-[10px] text-slate-400 leading-relaxed">
+          <div className="text-[10px] text-slate-500 leading-relaxed font-normal">
             GEOMINING &amp; Environmental Consultancy INC. Statutory MME &amp; EPA Regulatory Compliance Management.
           </div>
         </div>
@@ -203,3 +210,4 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
   );
 };
 
+export default CRMSidebar;

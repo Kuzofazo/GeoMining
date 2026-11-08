@@ -54,7 +54,7 @@ export const CRMPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-['Outfit',sans-serif] selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col font-['Outfit',sans-serif] selection:bg-[#2a602f] selection:text-white">
       {/* Statutory Header */}
       <CRMHeader
         currentUser={currentUser}

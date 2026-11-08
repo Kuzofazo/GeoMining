@@ -234,9 +234,9 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
         {canManage && (
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 shrink-0"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2a602f] hover:bg-emerald-800 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 shrink-0"
           >
-            <Plus size={16} />
+            <Plus size={16} className="text-[#ffc30d]" />
             <span>New Company Registration</span>
           </button>
         )}

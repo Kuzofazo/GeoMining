@@ -79,8 +79,8 @@ export const CRMCompliance: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-purple-50 text-purple-700 rounded-xl">
-              <Scale size={20} />
+            <div className="p-2 bg-emerald-50 text-[#2a602f] rounded-xl border border-emerald-200">
+              <Scale size={20} className="text-[#2a602f]" />
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight">
               Regulatory Compliance &amp; EPA Audit Tracker
@@ -91,8 +91,8 @@ export const CRMCompliance: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-purple-50 px-4 py-2 rounded-2xl border border-purple-200 text-purple-900 font-bold text-xs shrink-0">
-          <ShieldCheck size={16} className="text-purple-700" />
+        <div className="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-2xl border border-emerald-200 text-[#2a602f] font-bold text-xs shrink-0">
+          <ShieldCheck size={16} className="text-[#2a602f]" />
           <span>Statutory Index: <strong>{metrics.complianceRate}% Compliant</strong></span>
         </div>
       </div>

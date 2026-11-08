@@ -209,7 +209,7 @@ export const CRMLicenses: React.FC<CRMLicensesProps> = ({
         {canManage && (
           <button
             onClick={() => setShowIssueModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 shrink-0"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#ffc30d] hover:bg-[#e5ae0c] text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 shrink-0 border border-[#ffc30d]"
           >
             <Plus size={16} />
             <span>Issue Mining License</span>

@@ -52,14 +52,14 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
   const roleMeta = ROLE_LABELS[currentUser.role];
 
   return (
-    <header className="sticky top-0 z-30 bg-slate-900 border-b border-slate-800 text-white shadow-lg">
+    <header className="sticky top-0 z-30 bg-[#2a602f] border-b border-[#235027] text-white shadow-md font-['Outfit',sans-serif]">
       <div className="max-w-[120rem] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20 gap-4">
           {/* Left: Mobile Menu Toggle + Branding */}
           <div className="flex items-center gap-3 sm:gap-4 shrink-0">
             <button
               onClick={onToggleSidebar}
-              className="lg:hidden p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+              className="lg:hidden p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-colors"
               aria-label="Toggle Navigation"
             >
               <Menu size={20} />
@@ -67,7 +67,7 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
 
             <div className="flex items-center gap-3">
               <a href="/" className="flex items-center gap-2 group" title="Return to Public Website">
-                <div className="p-1.5 bg-white/10 rounded-xl border border-white/20 group-hover:scale-105 transition-transform">
+                <div className="p-1.5 bg-white rounded-xl border border-white/40 shadow-sm group-hover:scale-105 transition-transform">
                   <Logo className="h-8 w-8 sm:h-9 sm:w-9" />
                 </div>
               </a>
@@ -76,11 +76,11 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
                   <span className="text-xs sm:text-sm font-black tracking-tight uppercase text-white">
                     GMEC Regulatory Cadastre &amp; CRM
                   </span>
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-bold uppercase tracking-wider">
+                  <span className="px-2 py-0.5 rounded-full bg-[#ffc30d] text-slate-950 font-black text-[9px] uppercase tracking-wider shadow-sm">
                     v2.4 Statutory
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400 font-medium">
+                <p className="text-[10px] text-emerald-100 font-medium">
                   Mining Licenses • Corporate Registration • EPA Compliance • Client Portal
                 </p>
               </div>
@@ -99,7 +99,7 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
                 value={searchQuery}
                 onChange={handleSearchChange}
                 placeholder="Search companies, licenses, clients, coordinates..."
-                className="w-full bg-slate-950/80 border border-slate-700 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-medium"
+                className="w-full bg-white border border-emerald-900/40 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#ffc30d] focus:ring-2 focus:ring-[#ffc30d]/30 transition-all font-medium shadow-sm"
               />
               {searchQuery && (
                 <button
@@ -107,7 +107,7 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
                     setSearchQuery('');
                     onSearch('');
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
                 >
                   <X size={14} />
                 </button>
@@ -121,18 +121,18 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
             <div className="relative">
               <button
                 onClick={() => setShowRoleMenu(!showRoleMenu)}
-                className={`flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm ${roleMeta.badgeColor}`}
+                className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white text-slate-900 border border-slate-200 text-xs font-bold transition-all shadow-sm hover:bg-slate-50"
                 title="Switch active role for testing or administrative handover"
               >
-                <Shield size={13} className="shrink-0" />
+                <Shield size={13} className="shrink-0 text-[#2a602f]" />
                 <span className="hidden xl:inline">{roleMeta.label}</span>
                 <span className="xl:hidden uppercase text-[10px]">{currentUser.role.replace('_', ' ')}</span>
-                <ChevronDown size={13} className="shrink-0 opacity-70" />
+                <ChevronDown size={13} className="shrink-0 opacity-60" />
               </button>
 
               {showRoleMenu && (
-                <div className="absolute right-0 mt-2 w-72 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2">
-                  <div className="px-3 py-2 border-b border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 z-50 text-slate-800 animate-in fade-in slide-in-from-top-2">
+                  <div className="px-3 py-2 border-b border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
                     Switch Active System Role:
                   </div>
                   <div className="space-y-1 mt-1">
@@ -154,14 +154,14 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
                           onClick={() => handleRoleChange(r)}
                           className={`w-full flex items-start gap-2.5 px-3 py-2 rounded-xl text-left text-xs transition-colors ${
                             isCurrent
-                              ? 'bg-emerald-600/20 text-emerald-300 font-bold border border-emerald-500/30'
-                              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                              ? 'bg-emerald-50 text-[#2a602f] font-bold border border-emerald-200 shadow-sm'
+                              : 'text-slate-700 hover:bg-slate-50'
                           }`}
                         >
-                          <Shield size={14} className={`mt-0.5 shrink-0 ${isCurrent ? 'text-emerald-400' : 'text-slate-500'}`} />
+                          <Shield size={14} className={`mt-0.5 shrink-0 ${isCurrent ? 'text-[#2a602f]' : 'text-slate-400'}`} />
                           <div className="min-w-0">
-                            <div className="font-bold">{meta.label}</div>
-                            <div className="text-[10px] text-slate-400 truncate font-normal">
+                            <div className="font-bold text-slate-900">{meta.label}</div>
+                            <div className="text-[10px] text-slate-500 truncate font-normal">
                               {meta.description}
                             </div>
                           </div>
@@ -177,27 +177,27 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
             <div className="relative">
               <button
                 onClick={() => setShowNotifMenu(!showNotifMenu)}
-                className="relative p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                className="relative p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-colors shadow-sm"
                 title="Statutory Reminders & Alerts"
                 aria-label="View notifications"
               >
                 <Bell size={18} />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#ffc30d] text-slate-950 text-[9px] font-black flex items-center justify-center shadow-sm">
                     {unreadCount}
                   </span>
                 )}
               </button>
 
               {showNotifMenu && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-3 z-50">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-800 mb-2">
-                    <span className="text-xs font-black uppercase tracking-wider text-slate-300">
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-slate-200 rounded-2xl shadow-2xl p-3 z-50 text-slate-800">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-2">
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-900">
                       Statutory Notifications
                     </span>
                     <button
                       onClick={() => crmService.clearAllNotifications()}
-                      className="text-[10px] text-emerald-400 hover:text-emerald-300 font-bold"
+                      className="text-[10px] text-[#2a602f] hover:underline font-bold"
                     >
                       Mark all as read
                     </button>
@@ -218,22 +218,22 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
                           }}
                           className={`p-2.5 rounded-xl text-xs cursor-pointer transition-colors border ${
                             n.read
-                              ? 'bg-slate-950/40 border-slate-800/80 text-slate-400'
-                              : 'bg-slate-800 border-slate-700 text-slate-200'
-                          } hover:border-emerald-500/50`}
+                              ? 'bg-slate-50 border-slate-200 text-slate-500'
+                              : 'bg-emerald-50/60 border-emerald-200 text-slate-800 font-medium'
+                          } hover:border-[#2a602f]`}
                         >
                           <div className="flex items-start gap-2">
                             {n.type === 'critical' ? (
-                              <AlertTriangle size={14} className="text-red-400 shrink-0 mt-0.5" />
+                              <AlertTriangle size={14} className="text-red-500 shrink-0 mt-0.5" />
                             ) : n.type === 'warning' ? (
-                              <AlertTriangle size={14} className="text-amber-400 shrink-0 mt-0.5" />
+                              <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
                             ) : (
-                              <Info size={14} className="text-blue-400 shrink-0 mt-0.5" />
+                              <Info size={14} className="text-[#2a602f] shrink-0 mt-0.5" />
                             )}
                             <div className="min-w-0 flex-1">
-                              <p className="font-bold text-white text-[11px]">{n.title}</p>
-                              <p className="text-[10px] text-slate-300 leading-relaxed mt-0.5">{n.message}</p>
-                              <span className="text-[9px] text-slate-500 mt-1 block">{n.timestamp}</span>
+                              <p className="font-bold text-slate-900 text-[11px]">{n.title}</p>
+                              <p className="text-[10px] text-slate-600 leading-relaxed mt-0.5">{n.message}</p>
+                              <span className="text-[9px] text-slate-400 mt-1 block">{n.timestamp}</span>
                             </div>
                           </div>
                         </div>
@@ -245,15 +245,15 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
             </div>
 
             {/* User Session Profile & Logout */}
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
+            <div className="flex items-center gap-2 pl-2 border-l border-white/20">
               <div className="hidden sm:block text-right">
-                <div className="text-xs font-bold text-white truncate max-w-[130px]">{currentUser.name}</div>
-                <div className="text-[10px] text-slate-400 truncate max-w-[130px]">{currentUser.department}</div>
+                <div className="text-xs font-black text-white truncate max-w-[140px]">{currentUser.name}</div>
+                <div className="text-[10px] text-[#ffc30d] font-bold truncate max-w-[140px]">{currentUser.department}</div>
               </div>
 
               <button
                 onClick={onLogout}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 border border-slate-700/60 transition-colors"
+                className="p-2 rounded-xl bg-white/10 hover:bg-red-500/80 text-white border border-white/20 transition-colors shadow-sm"
                 title="Sign out of CRM"
                 aria-label="Logout"
               >
@@ -267,3 +267,4 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
   );
 };
 
+export default CRMHeader;

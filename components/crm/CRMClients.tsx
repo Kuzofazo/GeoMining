@@ -233,9 +233,9 @@ export const CRMClients: React.FC<CRMClientsProps> = ({ initialSearch = '' }) =>
         {canManage && (
           <button
             onClick={() => setShowAddClientModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 shrink-0"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2a602f] hover:bg-emerald-800 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 shrink-0"
           >
-            <Plus size={16} />
+            <Plus size={16} className="text-[#ffc30d]" />
             <span>New Client Account</span>
           </button>
         )}

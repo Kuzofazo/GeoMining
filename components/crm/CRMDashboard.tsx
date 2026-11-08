@@ -68,22 +68,22 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
     value: count,
   }));
 
-  const COLORS = ['#2d5a27', '#f59e0b', '#3b82f6', '#ec4899', '#8b5cf6', '#14b8a6', '#64748b'];
+  const COLORS = ['#2a602f', '#ffc30d', '#1e40af', '#059669', '#d97706', '#0f766e', '#475569'];
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
       {/* Top Welcome & Quick Actions Bar */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-[#1e3c1a] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl text-white">
+      <div className="bg-[#2a602f] border border-[#235027] rounded-3xl p-6 sm:p-8 shadow-xl text-white relative overflow-hidden">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-widest mb-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#ffc30d] text-slate-950 text-[10px] font-black uppercase tracking-widest mb-3 shadow-sm">
               <ShieldCheck size={13} />
               <span>Executive Management Control Center</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">
               Regulatory Compliance &amp; Cadastre Portal
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-emerald-100 mt-1 max-w-2xl leading-relaxed">
               Real-time monitoring of corporate entity registrations, mineral exploration concessions, EPA statutory audits, and strategic client engagements across the Republic of Liberia.
             </p>
           </div>
@@ -92,21 +92,21 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
               onClick={onOpenNewCompanyModal}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-[#2a602f] text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 border border-white/80"
             >
               <PlusCircle size={15} />
               <span>Register Company</span>
             </button>
             <button
               onClick={onOpenNewLicenseModal}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#ffc30d] hover:bg-[#e5ae0c] text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 border border-[#ffc30d]"
             >
               <FileCheck2 size={15} />
               <span>Issue Mining License</span>
             </button>
             <button
               onClick={() => onSelectTab('reports')}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold uppercase tracking-wider transition-all active:scale-95"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/30 text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-sm"
             >
               <Download size={15} />
               <span>Export Dossier</span>
@@ -310,14 +310,15 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
                 <YAxis tick={{ fontSize: 11, fill: '#64748b' }} allowDecimals={false} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#0f172a',
+                    backgroundColor: '#ffffff',
                     borderRadius: '12px',
-                    border: '1px solid #334155',
-                    color: '#fff',
+                    border: '1px solid #e2e8f0',
+                    color: '#0f172a',
                     fontSize: '12px',
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
                   }}
                 />
-                <Bar dataKey="count" fill="#2d5a27" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="count" fill="#2a602f" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -355,11 +356,12 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
                 </Pie>
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#0f172a',
+                    backgroundColor: '#ffffff',
                     borderRadius: '12px',
-                    border: '1px solid #334155',
-                    color: '#fff',
+                    border: '1px solid #e2e8f0',
+                    color: '#0f172a',
                     fontSize: '12px',
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
                   }}
                 />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />

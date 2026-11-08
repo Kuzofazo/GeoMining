@@ -93,8 +93,8 @@ export const CRMSecurity: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-slate-900 text-white rounded-xl">
-              <ShieldAlert size={20} className="text-amber-400" />
+            <div className="p-2 bg-emerald-50 text-[#2a602f] border border-emerald-200 rounded-xl">
+              <ShieldAlert size={20} className="text-[#2a602f]" />
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight">
               Security, RBAC Governance &amp; Audit Logs
@@ -108,9 +108,9 @@ export const CRMSecurity: React.FC = () => {
         {canManageUsers && (
           <button
             onClick={() => setShowAddUserModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 shrink-0"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2a602f] hover:bg-emerald-800 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 shrink-0"
           >
-            <Plus size={16} className="text-amber-400" />
+            <Plus size={16} className="text-[#ffc30d]" />
             <span>Provision User Account</span>
           </button>
         )}
@@ -122,7 +122,7 @@ export const CRMSecurity: React.FC = () => {
           onClick={() => setActiveSubTab('users')}
           className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${
             activeSubTab === 'users'
-              ? 'bg-[#2d5a27] text-white shadow-md'
+              ? 'bg-[#2a602f] text-white shadow-md'
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
@@ -134,7 +134,7 @@ export const CRMSecurity: React.FC = () => {
           onClick={() => setActiveSubTab('matrix')}
           className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${
             activeSubTab === 'matrix'
-              ? 'bg-[#2d5a27] text-white shadow-md'
+              ? 'bg-[#2a602f] text-white shadow-md'
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
@@ -146,7 +146,7 @@ export const CRMSecurity: React.FC = () => {
           onClick={() => setActiveSubTab('audit_logs')}
           className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${
             activeSubTab === 'audit_logs'
-              ? 'bg-[#2d5a27] text-white shadow-md'
+              ? 'bg-[#2a602f] text-white shadow-md'
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
@@ -179,7 +179,7 @@ export const CRMSecurity: React.FC = () => {
                     <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-slate-900 text-amber-400 font-black text-xs flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full bg-[#2a602f] text-[#ffc30d] font-black text-xs flex items-center justify-center">
                             {u.name.substring(0, 1)}
                           </div>
                           <div>
