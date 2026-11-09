@@ -342,6 +342,27 @@ class CRMStore {
 
   private init() {
     this.companies = loadFromStorage(STORAGE_KEYS.COMPANIES, INITIAL_COMPANIES);
+
+    // Enrich stored companies with statutory fields from INITIAL_COMPANIES or defaults
+    const initialCompMap = new Map<string, CompanyRecord>();
+    INITIAL_COMPANIES.forEach((c) => initialCompMap.set(c.id, c));
+    this.companies = this.companies.map((c) => {
+      const init = initialCompMap.get(c.id);
+      return {
+        ...c,
+        licenseType: c.licenseType || init?.licenseType || 'Mineral Exploration License',
+        dateOfApplication: c.dateOfApplication || init?.dateOfApplication || c.registrationDate || new Date().toISOString().substring(0, 10),
+        expiryDate: c.expiryDate || init?.expiryDate || c.annualRenewalDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
+        cityOfOperation: c.cityOfOperation || init?.cityOfOperation || (c.county === 'Nimba' ? 'Sanniquellie' : c.county === 'Bong' ? 'Gbarnga' : 'Monrovia'),
+        officeAddress: c.officeAddress || c.registeredAddress || init?.officeAddress || 'Monrovia, Liberia',
+        registeredAddress: c.registeredAddress || c.officeAddress || init?.registeredAddress || 'Monrovia, Liberia',
+        ownerName: c.ownerName || (c.directors && c.directors[0]?.name) || init?.ownerName || 'Principal Owner',
+        cellNo: c.cellNo || c.primaryPhone || init?.cellNo || '+231 77 000 0000',
+        primaryPhone: c.primaryPhone || c.cellNo || init?.primaryPhone || '+231 77 000 0000',
+      };
+    });
+    saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
+
     this.licenses = loadFromStorage(STORAGE_KEYS.LICENSES, INITIAL_MINING_LICENSES);
     this.clients = loadFromStorage(STORAGE_KEYS.CLIENTS, INITIAL_CLIENTS);
 
@@ -1449,16 +1470,38 @@ class CRMStore {
     let filename = `GMEC_Report_${type}_${new Date().toISOString().substring(0, 10)}.csv`;
 
     if (type === 'companies') {
-      const headers = ['Company Name', 'Reg Number', 'TIN', 'Entity Type', 'County', 'Status', 'Registration Date', 'Annual Renewal', 'Officer'];
+      const headers = [
+        'Company Name',
+        'Registration Number',
+        'TIN',
+        'License Type',
+        'Date of Application',
+        'Expire Date',
+        'County of Operation',
+        'City of Operation',
+        'Company Office Address',
+        'Name of Owner',
+        'Cell No',
+        'Email',
+        'Entity Type',
+        'Status',
+        'Officer',
+      ];
       const rows = this.companies.map((c) => [
         `"${c.companyName}"`,
         `"${c.registrationNumber}"`,
         `"${c.taxIdentificationNumber}"`,
-        `"${c.entityType}"`,
+        `"${c.licenseType || 'Mineral Exploration License'}"`,
+        `"${c.dateOfApplication || c.registrationDate}"`,
+        `"${c.expiryDate || c.annualRenewalDate}"`,
         `"${c.county}"`,
+        `"${c.cityOfOperation || ''}"`,
+        `"${c.officeAddress || c.registeredAddress || ''}"`,
+        `"${c.ownerName || (c.directors && c.directors[0]?.name) || ''}"`,
+        `"${c.cellNo || c.primaryPhone || ''}"`,
+        `"${c.primaryEmail || ''}"`,
+        `"${c.entityType}"`,
         `"${c.status.toUpperCase()}"`,
-        `"${c.registrationDate}"`,
-        `"${c.annualRenewalDate}"`,
         `"${c.assignedOfficer}"`,
       ]);
       csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');

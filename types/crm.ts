@@ -75,11 +75,18 @@ export interface CompanyRecord {
   registrationNumber: string; // e.g. LBR-CORP-2026-0881
   taxIdentificationNumber: string; // TIN
   entityType: EntityType;
+  licenseType?: LiberianLicenseCategory | string; // Licenses Types
+  dateOfApplication?: string; // Date of Application
+  expiryDate?: string; // Expire Date
+  county: string; // County of Operation
+  cityOfOperation?: string; // City of Operation
+  registeredAddress: string; // Company Office Address
+  officeAddress?: string; // Company Office Address alias
+  ownerName?: string; // Name of Owner
+  cellNo?: string; // Contact Cell No.
+  primaryEmail: string; // Contact Email
+  primaryPhone: string; // Phone / Cell No.
   jurisdiction: string; // e.g. Monrovia, Liberia
-  registeredAddress: string;
-  county: string; // e.g. Montserrado, Nimba, Bong
-  primaryEmail: string;
-  primaryPhone: string;
   registrationDate: string; // YYYY-MM-DD
   annualRenewalDate: string;
   status: RegistrationStatus;

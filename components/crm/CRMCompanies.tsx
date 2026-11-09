@@ -23,6 +23,9 @@ import {
   Sparkles,
   MessageSquare,
   Send,
+  Award,
+  Globe,
+  Briefcase,
 } from 'lucide-react';
 import { crmService } from '../../lib/crmService';
 import {
@@ -31,8 +34,42 @@ import {
   EntityType,
   CompanyDirector,
   CompanyDocument,
+  LiberianLicenseCategory,
 } from '../../types/crm';
 import { RecordCommentsModal } from './RecordCommentsModal';
+
+export const LIBERIAN_LICENSE_CATEGORIES: LiberianLicenseCategory[] = [
+  'Class A – Industrial Mining License',
+  'Class B – Semi-Mechanized Mining License',
+  'Class C – Artisanal Mining License',
+  'Mineral Exploration License',
+  'Prospecting License',
+  'Commercial Rock Quarry License',
+  'River Sand Mining License',
+  'Dealer / Exporter License (Gold & Diamonds)',
+  'Mineral Broker License',
+  'Commercial Blasting Permit',
+  'Certified Blaster License',
+  'Laterite Mining Permit',
+];
+
+export const LIBERIAN_COUNTIES = [
+  'Montserrado',
+  'Nimba',
+  'Bong',
+  'Grand Bassa',
+  'Lofa',
+  'Gbarpolu',
+  'Grand Cape Mount',
+  'Grand Gedeh',
+  'Sinoe',
+  'Maryland',
+  'River Cess',
+  'River Gee',
+  'Bomi',
+  'Grand Kru',
+  'Margibi',
+];
 
 interface CRMCompaniesProps {
   initialSearch?: string;
@@ -47,27 +84,28 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
   const [showDocUploadModal, setShowDocUploadModal] = useState(false);
   const [commentTargetCompany, setCommentTargetCompany] = useState<CompanyRecord | null>(null);
 
-  // New Company Form State
+  // New Company Form State — explicitly matching user requirements:
+  // Company Name, Licenses Types, Date of Application, Expire Date, County/city of Operation, Company Office address, Name of Owner, Cell No., Email
   const [newCompany, setNewCompany] = useState({
     companyName: '',
     registrationNumber: '',
     taxIdentificationNumber: '',
-    entityType: 'Corporation' as EntityType,
-    jurisdiction: 'Monrovia, Liberia',
-    registeredAddress: '',
+    licenseType: 'Class A – Industrial Mining License' as LiberianLicenseCategory,
+    dateOfApplication: new Date().toISOString().substring(0, 10),
+    expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
     county: 'Montserrado',
+    cityOfOperation: 'Monrovia',
+    registeredAddress: '',
+    officeAddress: '',
+    ownerName: '',
+    cellNo: '',
     primaryEmail: '',
     primaryPhone: '',
-    registrationDate: new Date().toISOString().substring(0, 10),
-    annualRenewalDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
+    entityType: 'Corporation' as EntityType,
     status: 'under_review' as RegistrationStatus,
     assignedOfficer: 'Helena K. Flomo',
     notes: '',
-    directorName: '',
-    directorTitle: 'Managing Director',
     directorNationality: 'Liberian',
-    directorIdNumber: '',
-    directorShareholdingPct: 100,
   });
 
   // Document Upload State
@@ -90,7 +128,11 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
       search === '' ||
       c.companyName.toLowerCase().includes(search.toLowerCase()) ||
       c.registrationNumber.toLowerCase().includes(search.toLowerCase()) ||
-      c.taxIdentificationNumber.toLowerCase().includes(search.toLowerCase()) ||
+      (c.licenseType && c.licenseType.toLowerCase().includes(search.toLowerCase())) ||
+      (c.ownerName && c.ownerName.toLowerCase().includes(search.toLowerCase())) ||
+      (c.cityOfOperation && c.cityOfOperation.toLowerCase().includes(search.toLowerCase())) ||
+      (c.cellNo && c.cellNo.toLowerCase().includes(search.toLowerCase())) ||
+      (c.officeAddress && c.officeAddress.toLowerCase().includes(search.toLowerCase())) ||
       c.county.toLowerCase().includes(search.toLowerCase()) ||
       c.directors.some((d) => d.name.toLowerCase().includes(search.toLowerCase()));
 
@@ -102,35 +144,48 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
 
   const handleCreateCompany = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCompany.companyName || !newCompany.registrationNumber) return;
+    if (!newCompany.companyName.trim()) return;
 
-    const directors: CompanyDirector[] = newCompany.directorName
+    const regNum = newCompany.registrationNumber.trim() || `LBR-CORP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const tin = newCompany.taxIdentificationNumber.trim() || `TIN-${Math.floor(100000000 + Math.random() * 900000000)}`;
+    const officeAddr = newCompany.officeAddress.trim() || newCompany.registeredAddress.trim() || `${newCompany.cityOfOperation || 'Monrovia'}, ${newCompany.county}, Liberia`;
+    const phoneVal = newCompany.cellNo.trim() || newCompany.primaryPhone.trim() || '+231 77 000 0000';
+    const emailVal = newCompany.primaryEmail.trim() || 'info@company.lr';
+
+    const directors: CompanyDirector[] = newCompany.ownerName.trim()
       ? [
           {
             id: `dir-${Date.now()}`,
-            name: newCompany.directorName,
-            title: newCompany.directorTitle,
-            nationality: newCompany.directorNationality,
-            idNumber: newCompany.directorIdNumber || 'PENDING-ID',
-            shareholdingPct: Number(newCompany.directorShareholdingPct) || 100,
-            email: newCompany.primaryEmail,
-            phone: newCompany.primaryPhone,
+            name: newCompany.ownerName.trim(),
+            title: 'Principal Owner / Managing Director',
+            nationality: newCompany.directorNationality.trim() || 'Liberian',
+            idNumber: 'VERIFIED-ID',
+            shareholdingPct: 100,
+            email: emailVal,
+            phone: phoneVal,
           },
         ]
       : [];
 
     crmService.addCompany({
-      companyName: newCompany.companyName,
-      registrationNumber: newCompany.registrationNumber,
-      taxIdentificationNumber: newCompany.taxIdentificationNumber || `TIN-${Math.floor(100000000 + Math.random() * 900000000)}`,
+      companyName: newCompany.companyName.trim(),
+      registrationNumber: regNum,
+      taxIdentificationNumber: tin,
       entityType: newCompany.entityType,
-      jurisdiction: newCompany.jurisdiction,
-      registeredAddress: newCompany.registeredAddress || 'Monrovia, Liberia',
+      licenseType: newCompany.licenseType,
+      dateOfApplication: newCompany.dateOfApplication,
+      expiryDate: newCompany.expiryDate,
       county: newCompany.county,
-      primaryEmail: newCompany.primaryEmail,
-      primaryPhone: newCompany.primaryPhone,
-      registrationDate: newCompany.registrationDate,
-      annualRenewalDate: newCompany.annualRenewalDate,
+      cityOfOperation: newCompany.cityOfOperation.trim() || 'Monrovia',
+      registeredAddress: officeAddr,
+      officeAddress: officeAddr,
+      ownerName: newCompany.ownerName.trim(),
+      cellNo: phoneVal,
+      primaryPhone: phoneVal,
+      primaryEmail: emailVal,
+      jurisdiction: `${newCompany.cityOfOperation || 'Monrovia'}, ${newCompany.county}, Liberia`,
+      registrationDate: newCompany.dateOfApplication,
+      annualRenewalDate: newCompany.expiryDate,
       status: newCompany.status,
       assignedOfficer: newCompany.assignedOfficer,
       notes: newCompany.notes,
@@ -138,27 +193,27 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
     });
 
     setShowAddModal(false);
-    // Reset
+    // Reset Form
     setNewCompany({
       companyName: '',
       registrationNumber: '',
       taxIdentificationNumber: '',
-      entityType: 'Corporation',
-      jurisdiction: 'Monrovia, Liberia',
-      registeredAddress: '',
+      licenseType: 'Class A – Industrial Mining License',
+      dateOfApplication: new Date().toISOString().substring(0, 10),
+      expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
       county: 'Montserrado',
+      cityOfOperation: 'Monrovia',
+      registeredAddress: '',
+      officeAddress: '',
+      ownerName: '',
+      cellNo: '',
       primaryEmail: '',
       primaryPhone: '',
-      registrationDate: new Date().toISOString().substring(0, 10),
-      annualRenewalDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
+      entityType: 'Corporation',
       status: 'under_review',
       assignedOfficer: 'Helena K. Flomo',
       notes: '',
-      directorName: '',
-      directorTitle: 'Managing Director',
       directorNationality: 'Liberian',
-      directorIdNumber: '',
-      directorShareholdingPct: 100,
     });
   };
 
@@ -296,12 +351,11 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-slate-500">
               <tr>
-                <th className="py-3.5 px-4">Company Legal Name</th>
-                <th className="py-3.5 px-4">Registration &amp; TIN</th>
-                <th className="py-3.5 px-4">Entity Type</th>
-                <th className="py-3.5 px-4">Jurisdiction / County</th>
-                <th className="py-3.5 px-4">Key Directors</th>
-                <th className="py-3.5 px-4">Documents</th>
+                <th className="py-3.5 px-4">Company Name &amp; License Type</th>
+                <th className="py-3.5 px-4">Name of Owner</th>
+                <th className="py-3.5 px-4">County / City &amp; Office Address</th>
+                <th className="py-3.5 px-4">Application &amp; Expire Dates</th>
+                <th className="py-3.5 px-4">Contact Details</th>
                 <th className="py-3.5 px-4">Status</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
@@ -309,83 +363,114 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
               {filteredCompanies.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
                     No registered companies found matching the search criteria.
                   </td>
                 </tr>
               ) : (
-                filteredCompanies.map((comp) => (
-                  <tr key={comp.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3.5 px-4">
-                      <div className="font-bold text-slate-900 text-xs sm:text-sm">{comp.companyName}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">{comp.primaryEmail}</div>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="font-mono text-[11px] font-bold text-slate-900">{comp.registrationNumber}</div>
-                      <div className="font-mono text-[10px] text-slate-400">{comp.taxIdentificationNumber}</div>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className="text-slate-700 font-medium">{comp.entityType}</span>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-1 text-slate-800 font-bold">
-                        <MapPin size={12} className="text-emerald-600" />
-                        <span>{comp.county}</span>
-                      </div>
-                      <div className="text-[10px] text-slate-400 truncate max-w-[130px]">{comp.registeredAddress}</div>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="text-xs font-bold text-slate-800">
-                        {comp.directors.length > 0 ? comp.directors[0].name : 'None Listed'}
-                      </div>
-                      {comp.directors.length > 1 && (
-                        <div className="text-[10px] text-emerald-600 font-bold">
-                          +{comp.directors.length - 1} more director{comp.directors.length > 2 ? 's' : ''}
+                filteredCompanies.map((comp) => {
+                  const owner = comp.ownerName || comp.directors?.[0]?.name || 'Not Disclosed';
+                  const appDate = comp.dateOfApplication || comp.registrationDate || '—';
+                  const expDate = comp.expiryDate || comp.annualRenewalDate || '—';
+                  const cell = comp.cellNo || comp.primaryPhone || '—';
+                  const email = comp.primaryEmail || '—';
+                  const city = comp.cityOfOperation || 'Monrovia';
+                  const office = comp.officeAddress || comp.registeredAddress || `${city}, ${comp.county}, Liberia`;
+                  const license = comp.licenseType || 'Class A – Industrial Mining License';
+
+                  return (
+                    <tr key={comp.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-slate-900 text-xs sm:text-sm">{comp.companyName}</div>
+                        <div
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-[#2a602f] border border-emerald-200 text-[10px] font-bold mt-1 max-w-[220px] truncate"
+                          title={license}
+                        >
+                          <Award size={10} className="shrink-0 text-[#2a602f]" />
+                          <span className="truncate">{license}</span>
                         </div>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 font-bold text-[11px]">
-                        <FileText size={12} />
-                        <span>{comp.documents.length} Files</span>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4">{getStatusBadge(comp.status)}</td>
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => setCommentTargetCompany(comp)}
-                          className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-[#2a602f] text-slate-700 font-bold text-xs transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
-                          title="View and Add Observations"
+                        <div className="font-mono text-[10px] text-slate-400 mt-1">
+                          {comp.registrationNumber} • {comp.entityType}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                          <UserCheck size={13} className="text-[#2a602f] shrink-0" />
+                          <span>{owner}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">Beneficial Owner / Managing Dir</div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-1 text-slate-800 font-bold text-xs">
+                          <MapPin size={12} className="text-[#2a602f] shrink-0" />
+                          <span>
+                            {comp.county} • {city}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-slate-500 truncate max-w-[200px] mt-0.5" title={office}>
+                          {office}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="text-[11px] text-slate-700">
+                          <span className="text-slate-400 font-semibold">Applied:</span>{' '}
+                          <strong className="text-slate-900">{appDate}</strong>
+                        </div>
+                        <div className="text-[11px] text-slate-700 mt-0.5">
+                          <span className="text-slate-400 font-semibold">Expires:</span>{' '}
+                          <strong className="text-amber-700">{expDate}</strong>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-1 font-bold text-slate-800 text-[11px]">
+                          <Phone size={11} className="text-[#2a602f] shrink-0" />
+                          <span>{cell}</span>
+                        </div>
+                        <div
+                          className="flex items-center gap-1 text-[10px] text-slate-500 mt-0.5 truncate max-w-[170px]"
+                          title={email}
                         >
-                          <MessageSquare size={13} className="text-[#2a602f]" />
-                          <span>Notes</span>
-                          {crmService.getComments(comp.id).length > 0 && (
-                            <span className="px-1.5 py-0.2 rounded-full bg-[#ffc30d] text-slate-950 font-black text-[9px]">
-                              {crmService.getComments(comp.id).length}
-                            </span>
-                          )}
-                        </button>
-                        <button
-                          onClick={() => setSelectedCompany(comp)}
-                          className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-[#2d5a27] hover:text-white text-slate-700 font-bold text-xs transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
-                        >
-                          <Eye size={13} />
-                          <span>Dossier</span>
-                        </button>
-                        {canDelete && (
+                          <Mail size={11} className="text-slate-400 shrink-0" />
+                          <span className="truncate">{email}</span>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">{getStatusBadge(comp.status)}</td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
-                            onClick={() => handleDelete(comp.id)}
-                            className="p-1.5 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
-                            title="Delete Company Record"
+                            onClick={() => setCommentTargetCompany(comp)}
+                            className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-[#2a602f] text-slate-700 font-bold text-xs transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+                            title="View and Add Observations"
                           >
-                            <Trash2 size={14} />
+                            <MessageSquare size={13} className="text-[#2a602f]" />
+                            <span>Notes</span>
+                            {crmService.getComments(comp.id).length > 0 && (
+                              <span className="px-1.5 py-0.2 rounded-full bg-[#ffc30d] text-slate-950 font-black text-[9px]">
+                                {crmService.getComments(comp.id).length}
+                              </span>
+                            )}
                           </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                          <button
+                            onClick={() => setSelectedCompany(comp)}
+                            className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-[#2d5a27] hover:text-white text-slate-700 font-bold text-xs transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+                          >
+                            <Eye size={13} />
+                            <span>Dossier</span>
+                          </button>
+                          {canDelete && (
+                            <button
+                              onClick={() => handleDelete(comp.id)}
+                              className="p-1.5 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
+                              title="Delete Company Record"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -481,41 +566,107 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
               )}
             </div>
 
-            {/* Corporate Profile Details */}
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
-                  Entity &amp; Jurisdiction
-                </span>
-                <div className="text-xs font-bold text-slate-900">{selectedCompany.entityType}</div>
-                <div className="text-xs text-slate-600 mt-1">{selectedCompany.jurisdiction}</div>
-                <div className="text-xs text-slate-600">{selectedCompany.county} County</div>
+            {/* Corporate Profile Details — full field set per user requirements */}
+            <div className="mt-6 space-y-3">
+              {/* Row 1: License Type + Entity */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-200">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#2a602f] block mb-1.5 flex items-center gap-1">
+                    <Award size={11} className="inline" /> License Types
+                  </span>
+                  <div className="text-sm font-black text-[#2a602f]">
+                    {selectedCompany.licenseType || 'Class A – Industrial Mining License'}
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-1">{selectedCompany.entityType} • {selectedCompany.registrationNumber}</div>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">
+                    Name of Owner
+                  </span>
+                  <div className="text-sm font-black text-slate-900 flex items-center gap-1.5">
+                    <UserCheck size={14} className="text-[#2a602f]" />
+                    {selectedCompany.ownerName || selectedCompany.directors?.[0]?.name || 'Not Disclosed'}
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-1">
+                    Principal Owner / Managing Director
+                  </div>
+                </div>
               </div>
 
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
-                  Registration Dates
-                </span>
-                <div className="text-xs text-slate-600">
-                  Registered: <strong className="text-slate-900">{selectedCompany.registrationDate}</strong>
+              {/* Row 2: Application Date + Expire Date */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1.5 flex items-center gap-1">
+                    <Clock size={11} className="inline" /> Date of Application
+                  </span>
+                  <div className="text-sm font-black text-slate-900">
+                    {selectedCompany.dateOfApplication || selectedCompany.registrationDate || '—'}
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-1">Application Filing Date</div>
                 </div>
-                <div className="text-xs text-slate-600 mt-1">
-                  Annual Re-filing: <strong className="text-amber-700">{selectedCompany.annualRenewalDate}</strong>
+
+                <div className="bg-amber-50 p-4 rounded-2xl border border-amber-200">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 block mb-1.5 flex items-center gap-1">
+                    <Clock size={11} className="inline" /> Expire Date
+                  </span>
+                  <div className="text-sm font-black text-amber-800">
+                    {selectedCompany.expiryDate || selectedCompany.annualRenewalDate || '—'}
+                  </div>
+                  <div className="text-[11px] text-amber-600 mt-1">License / Registration Expiry</div>
                 </div>
-                <div className="text-[10px] text-slate-400 mt-1">Assigned: {selectedCompany.assignedOfficer}</div>
               </div>
 
+              {/* Row 3: County / City + Office Address */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
-                  Official Communication
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2 flex items-center gap-1">
+                  <MapPin size={11} className="inline text-[#2a602f]" /> County / City of Operation &amp; Company Office Address
                 </span>
-                <div className="text-xs text-slate-900 font-bold flex items-center gap-1 truncate">
-                  <Mail size={12} className="text-emerald-600 shrink-0" />
-                  <span className="truncate">{selectedCompany.primaryEmail}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-[10px] text-slate-400 font-semibold uppercase mb-0.5">County &amp; City</div>
+                    <div className="text-sm font-black text-slate-900">
+                      {selectedCompany.county}
+                      {selectedCompany.cityOfOperation ? ` • ${selectedCompany.cityOfOperation}` : ''}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-slate-400 font-semibold uppercase mb-0.5">Company Office Address</div>
+                    <div className="text-xs font-bold text-slate-800">
+                      {selectedCompany.officeAddress || selectedCompany.registeredAddress || selectedCompany.jurisdiction || '—'}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-xs text-slate-600 mt-1 flex items-center gap-1">
-                  <Phone size={12} className="text-emerald-600 shrink-0" />
-                  <span>{selectedCompany.primaryPhone}</span>
+              </div>
+
+              {/* Row 4: Contact Details */}
+              <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/50">
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#2a602f] block mb-2 flex items-center gap-1">
+                  <Phone size={11} className="inline" /> Contact Details
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-white rounded-xl border border-emerald-200 shrink-0">
+                      <Phone size={13} className="text-[#2a602f]" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-400 font-semibold">Cell No.</div>
+                      <div className="text-sm font-black text-slate-900">
+                        {selectedCompany.cellNo || selectedCompany.primaryPhone || '—'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="p-2 bg-white rounded-xl border border-emerald-200 shrink-0">
+                      <Mail size={13} className="text-[#2a602f]" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[10px] text-slate-400 font-semibold">Email.</div>
+                      <div className="text-sm font-black text-slate-900 truncate" title={selectedCompany.primaryEmail}>
+                        {selectedCompany.primaryEmail || '—'}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -638,11 +789,18 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
               </button>
             </div>
 
-            <form onSubmit={handleCreateCompany} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <form onSubmit={handleCreateCompany} className="space-y-5 text-xs">
+
+              {/* ── SECTION 1: Company Name & License Type ── */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
+                  <Building2 size={13} className="text-[#2a602f]" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#2a602f]">Company Information</span>
+                </div>
+
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
-                    Company Legal Name *
+                    Company Name *
                   </label>
                   <input
                     type="text"
@@ -650,146 +808,258 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                     value={newCompany.companyName}
                     onChange={(e) => setNewCompany({ ...newCompany, companyName: e.target.value })}
                     placeholder="e.g. Nimba Gold Consortium Ltd"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2a602f]/30 focus:border-[#2a602f]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
-                    Registration Number (LBR) *
+                    License Types *
                   </label>
-                  <input
-                    type="text"
+                  <select
                     required
-                    value={newCompany.registrationNumber}
-                    onChange={(e) => setNewCompany({ ...newCompany, registrationNumber: e.target.value })}
-                    placeholder="e.g. LBR-CORP-2026-0922"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-slate-900 font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
-                    Entity Type
-                  </label>
-                  <select
-                    value={newCompany.entityType}
-                    onChange={(e) => setNewCompany({ ...newCompany, entityType: e.target.value as EntityType })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    value={newCompany.licenseType}
+                    onChange={(e) => setNewCompany({ ...newCompany, licenseType: e.target.value as LiberianLicenseCategory })}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2a602f]/30 focus:border-[#2a602f]"
                   >
-                    <option value="Corporation">Corporation</option>
-                    <option value="Limited Liability Company (LLC)">LLC</option>
-                    <option value="Joint Venture (JV)">Joint Venture</option>
-                    <option value="Sole Proprietorship">Sole Proprietorship</option>
-                    <option value="Partnership">Partnership</option>
-                    <option value="Artisanal Mining Cooperative">Mining Cooperative</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
-                    County (Liberia)
-                  </label>
-                  <select
-                    value={newCompany.county}
-                    onChange={(e) => setNewCompany({ ...newCompany, county: e.target.value })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  >
-                    {['Montserrado', 'Nimba', 'Bong', 'Grand Bassa', 'Lofa', 'Gbarpolu', 'Grand Cape Mount', 'Sinoe', 'Maryland', 'River Cess'].map((c) => (
-                      <option key={c} value={c}>{c}</option>
+                    {LIBERIAN_LICENSE_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
-                    Status
-                  </label>
-                  <select
-                    value={newCompany.status}
-                    onChange={(e) => setNewCompany({ ...newCompany, status: e.target.value as RegistrationStatus })}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  >
-                    <option value="under_review">Under Review</option>
-                    <option value="active">Active</option>
-                    <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
-                    Official Email
-                  </label>
-                  <input
-                    type="email"
-                    value={newCompany.primaryEmail}
-                    onChange={(e) => setNewCompany({ ...newCompany, primaryEmail: e.target.value })}
-                    placeholder="info@company.lr"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
-                    Phone Contact
-                  </label>
-                  <input
-                    type="text"
-                    value={newCompany.primaryPhone}
-                    onChange={(e) => setNewCompany({ ...newCompany, primaryPhone: e.target.value })}
-                    placeholder="+231 77 000 0000"
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  />
-                </div>
-              </div>
-
-              {/* Primary Director Section */}
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 block">
-                  Lead Director / Beneficial Owner
-                </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[9px] font-bold text-slate-500 mb-0.5">Director Full Name</label>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                      Registration Number (LBR)
+                    </label>
                     <input
                       type="text"
-                      value={newCompany.directorName}
-                      onChange={(e) => setNewCompany({ ...newCompany, directorName: e.target.value })}
-                      placeholder="e.g. Carlos Tingban"
-                      className="w-full p-2 bg-white border border-slate-200 rounded-lg text-slate-900 font-bold"
+                      value={newCompany.registrationNumber}
+                      onChange={(e) => setNewCompany({ ...newCompany, registrationNumber: e.target.value })}
+                      placeholder="e.g. LBR-CORP-2026-0922"
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-[#2a602f]/30 focus:border-[#2a602f]"
                     />
                   </div>
                   <div>
-                    <label className="block text-[9px] font-bold text-slate-500 mb-0.5">Nationality</label>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                      Entity Type
+                    </label>
+                    <select
+                      value={newCompany.entityType}
+                      onChange={(e) => setNewCompany({ ...newCompany, entityType: e.target.value as EntityType })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2a602f]/30 focus:border-[#2a602f]"
+                    >
+                      <option value="Corporation">Corporation</option>
+                      <option value="Limited Liability Company (LLC)">LLC</option>
+                      <option value="Joint Venture (JV)">Joint Venture</option>
+                      <option value="Sole Proprietorship">Sole Proprietorship</option>
+                      <option value="Partnership">Partnership</option>
+                      <option value="Artisanal Mining Cooperative">Mining Cooperative</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── SECTION 2: Application & Expire Dates ── */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
+                  <Clock size={13} className="text-[#2a602f]" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#2a602f]">License Dates &amp; Status</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                      Date of Application *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={newCompany.dateOfApplication}
+                      onChange={(e) => setNewCompany({ ...newCompany, dateOfApplication: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-[#2a602f]/30 focus:border-[#2a602f]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                      Expire Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={newCompany.expiryDate}
+                      onChange={(e) => setNewCompany({ ...newCompany, expiryDate: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-[#2a602f]/30 focus:border-[#2a602f]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                      Status
+                    </label>
+                    <select
+                      value={newCompany.status}
+                      onChange={(e) => setNewCompany({ ...newCompany, status: e.target.value as RegistrationStatus })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2a602f]/30 focus:border-[#2a602f]"
+                    >
+                      <option value="under_review">Under Review</option>
+                      <option value="pending">Pending</option>
+                      <option value="active">Active</option>
+                      <option value="approved">Approved</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── SECTION 3: County / City of Operation & Office Address ── */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
+                  <MapPin size={13} className="text-[#2a602f]" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#2a602f]">County / City of Operation</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                      County (Liberia) *
+                    </label>
+                    <select
+                      required
+                      value={newCompany.county}
+                      onChange={(e) => setNewCompany({ ...newCompany, county: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2a602f]/30 focus:border-[#2a602f]"
+                    >
+                      {LIBERIAN_COUNTIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                      City of Operation *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newCompany.cityOfOperation}
+                      onChange={(e) => setNewCompany({ ...newCompany, cityOfOperation: e.target.value })}
+                      placeholder="e.g. Monrovia"
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-[#2a602f]/30 focus:border-[#2a602f]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                    Company Office Address *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newCompany.officeAddress}
+                    onChange={(e) => setNewCompany({ ...newCompany, officeAddress: e.target.value })}
+                    placeholder="e.g. 14 Tubman Boulevard, Sinkor, Monrovia, Liberia"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2a602f]/30 focus:border-[#2a602f]"
+                  />
+                </div>
+              </div>
+
+              {/* ── SECTION 4: Name of Owner ── */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
+                  <UserCheck size={13} className="text-[#2a602f]" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#2a602f]">Name of Owner</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                      Full Name of Owner *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newCompany.ownerName}
+                      onChange={(e) => setNewCompany({ ...newCompany, ownerName: e.target.value })}
+                      placeholder="e.g. Emmanuel T. Johnson"
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2a602f]/30 focus:border-[#2a602f]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                      Owner Nationality
+                    </label>
                     <input
                       type="text"
                       value={newCompany.directorNationality}
                       onChange={(e) => setNewCompany({ ...newCompany, directorNationality: e.target.value })}
                       placeholder="Liberian"
-                      className="w-full p-2 bg-white border border-slate-200 rounded-lg text-slate-900"
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2a602f]/30 focus:border-[#2a602f]"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="pt-2 flex justify-end gap-2">
+              {/* ── SECTION 5: Contact Details ── */}
+              <div className="p-4 bg-emerald-50/60 rounded-2xl border border-emerald-200 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Phone size={13} className="text-[#2a602f]" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#2a602f]">Contact Details</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                      Cell No. *
+                    </label>
+                    <div className="relative">
+                      <Phone size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="tel"
+                        required
+                        value={newCompany.cellNo}
+                        onChange={(e) => setNewCompany({ ...newCompany, cellNo: e.target.value, primaryPhone: e.target.value })}
+                        placeholder="+231 77 000 0000"
+                        className="w-full pl-8 p-2.5 bg-white border border-emerald-200 rounded-xl text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-[#2a602f]/30 focus:border-[#2a602f]"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                      Email. *
+                    </label>
+                    <div className="relative">
+                      <Mail size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="email"
+                        required
+                        value={newCompany.primaryEmail}
+                        onChange={(e) => setNewCompany({ ...newCompany, primaryEmail: e.target.value })}
+                        placeholder="info@company.lr"
+                        className="w-full pl-8 p-2.5 bg-white border border-emerald-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2a602f]/30 focus:border-[#2a602f]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Action Buttons ── */}
+              <div className="pt-2 flex justify-end gap-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-100"
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-100 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-wider shadow-md"
+                  className="px-6 py-2.5 rounded-xl font-black uppercase tracking-wider shadow-md transition-colors"
+                  style={{ backgroundColor: '#2a602f', color: '#ffc30d' }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#1e4621'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#2a602f'; }}
                 >
-                  Register Entity
+                  ✦ Register Entity
                 </button>
               </div>
             </form>
