@@ -18,6 +18,9 @@ import {
   Activity,
   PlusCircle,
   Download,
+  UserCheck,
+  Shield,
+  Award,
 } from 'lucide-react';
 import {
   BarChart,
@@ -59,6 +62,11 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
   const companies = crmService.getCompanies();
   const pendingApprovals = companies.filter((c) => c.status === 'under_review' || c.status === 'pending');
   const canApprove = crmService.checkPermission('canApproveRegistrations');
+  const isRegistryBoss = currentUser?.email.toLowerCase() === 'emyers@geominingec.com';
+  const isRegistryOfficer = currentUser?.role === 'registry_department' && !isRegistryBoss;
+  const isExecutiveDirector = currentUser?.role === 'management';
+  const isSuperAdmin = currentUser?.role === 'super_admin';
+  const canTrackRegistrations = isSuperAdmin || isExecutiveDirector || isRegistryBoss;
 
   // Expiring licenses within 60 days or expired
   const urgentLicenses = licenses.filter(
@@ -109,7 +117,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
         </div>
       )}
 
-      {/* Executive / Administrator Approval Notification Banner */}
+      {/* Executive Director / Registry Department Boss Approval Notification Banner */}
       {canApprove && pendingApprovals.length > 0 && (
         <div
           onClick={() => onSelectTab('companies')}
@@ -125,11 +133,16 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
                   Action Required — {pendingApprovals.length} Company Registration{pendingApprovals.length > 1 ? 's' : ''} Awaiting Approval
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-black uppercase">
-                  {currentUser?.role === 'management' ? 'Executive Director' : currentUser?.role === 'administrator' ? 'Administrator' : 'Super Admin'} Authorization
+                  {isExecutiveDirector
+                    ? 'Executive Director'
+                    : isRegistryBoss
+                    ? 'Registry Department Boss'
+                    : 'Super Admin'}{' '}
+                  Authorization
                 </span>
               </div>
               <p className="text-xs text-amber-800 mt-0.5 font-medium">
-                Companies registered by the Registry Department require official statutory authorization from either the Administrator (Z. Teewu) or Executive Director (Carlos Etingban). Click here to review and approve.
+                Companies registered by Registry Department officers require official statutory authorization from either the <strong>Executive Director (Carlos Etingban)</strong> or the <strong>Registry Department Boss (E. Myers - emyers@geominingec.com)</strong>. Click here to review and approve.
               </p>
             </div>
           </div>
@@ -137,8 +150,8 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
         </div>
       )}
 
-      {/* Registry Department Workflow Notice */}
-      {currentUser?.role === 'registry_department' && (
+      {/* Registry Department Officer Intake Workflow Notice */}
+      {isRegistryOfficer && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-[#2a602f] text-white shrink-0">
@@ -146,10 +159,10 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
             </div>
             <div>
               <span className="text-xs font-black uppercase tracking-wider text-[#2a602f]">
-                Registry Department Workflow Notice
+                Registry Department Intake Notice
               </span>
               <p className="text-xs text-slate-600 mt-0.5 font-medium">
-                New company intake records are submitted under review for authorization by either the Administrator or Executive Director.
+                New company intake records are submitted under review for statutory authorization by either the <strong>Executive Director (Carlos Etingban)</strong> or the <strong>Registry Department Boss (E. Myers)</strong>.
               </p>
             </div>
           </div>
@@ -484,6 +497,101 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Officer Company Registry Intake Tracker — Super Admin, Executive Director & Registry Boss */}
+      {canTrackRegistrations && (
+        <div className="bg-white border-2 border-emerald-500/20 rounded-3xl p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-[#2a602f] text-white shadow-sm">
+                <UserCheck size={20} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">
+                    Officer Company Registry Intake &amp; Provenance Tracker
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full bg-[#ffc30d]/20 text-emerald-900 border border-[#ffc30d]/40 text-[10px] font-black uppercase">
+                    {isExecutiveDirector
+                      ? 'Executive Director Oversight'
+                      : isRegistryBoss
+                      ? 'Registry Boss Console'
+                      : 'Super Admin Authority'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Track who entered every corporate entity into the GMEC Cadastre, submission timestamps, and statutory approvals.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => onSelectTab('companies')}
+              className="text-xs text-[#2a602f] hover:text-[#1e4621] font-black uppercase tracking-wider flex items-center gap-1 shrink-0 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-200 transition-colors"
+            >
+              <span>Companies Directory</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {companies.slice(0, 6).map((comp) => {
+              const officerName = comp.registeredByName || 'Official Cadastre Officer';
+              const officerEmail = comp.registeredByEmail || 'N/A';
+              const officerDept = comp.registeredByDepartment || comp.registeredByRole?.replace('_', ' ') || 'Registry Dept';
+              const filedDate = comp.registeredAt ? comp.registeredAt.substring(0, 10) : comp.dateOfApplication || comp.registrationDate || '—';
+              const isPending = comp.status === 'under_review' || comp.status === 'pending';
+
+              return (
+                <div
+                  key={comp.id}
+                  onClick={() => onSelectTab('companies')}
+                  className="p-4 rounded-2xl border border-slate-200 hover:border-[#2a602f] bg-slate-50/60 hover:bg-white transition-all cursor-pointer group shadow-2xs"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <span className="font-bold text-slate-900 text-xs line-clamp-1 group-hover:text-[#2a602f] transition-colors">
+                      {comp.companyName}
+                    </span>
+                    {isPending ? (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-100 text-amber-900 border border-amber-300 shrink-0">
+                        Under Review
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 text-emerald-900 border border-emerald-200 shrink-0">
+                        {comp.status}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="text-[11px] text-slate-500 font-mono mb-2">
+                    {comp.registrationNumber} • {comp.county} County
+                  </div>
+
+                  {/* Officer Intake Tracking Box */}
+                  <div className="pt-2 border-t border-slate-200/80 space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <UserCheck size={12} className="text-[#2a602f] shrink-0" />
+                      <span className="text-[10px] text-slate-400 font-semibold">Entered by:</span>
+                      <strong className="text-slate-900 text-[11px] truncate">{officerName}</strong>
+                    </div>
+                    <div className="text-[10px] text-slate-500 pl-4 truncate">
+                      {officerEmail} • <span className="text-slate-400">{officerDept}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] text-slate-400 pl-4 pt-0.5">
+                      <span>Filed: {filedDate}</span>
+                      {comp.approvedBy && (
+                        <span className="text-emerald-700 font-bold truncate max-w-[130px]" title={comp.approvedBy}>
+                          ✓ {comp.approvedBy.split('(')[0].trim()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Recent Activity & Audit Trail Preview */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">

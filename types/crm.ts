@@ -95,9 +95,14 @@ export interface CompanyRecord {
   assignedOfficer: string;
   registeredByRole?: UserRole;
   registeredByName?: string;
+  registeredByEmail?: string;
+  registeredByDepartment?: string;
+  registeredByUserId?: string;
+  registeredAt?: string;
   approvedBy?: string;
   approvedAt?: string;
   approvedByRole?: UserRole;
+  approvedByEmail?: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;

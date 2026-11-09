@@ -26,6 +26,7 @@ import {
   Award,
   Globe,
   Briefcase,
+  Activity,
 } from 'lucide-react';
 import { crmService } from '../../lib/crmService';
 import {
@@ -79,6 +80,8 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
   const [search, setSearch] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [entityFilter, setEntityFilter] = useState<string>('all');
+  const [officerFilter, setOfficerFilter] = useState<string>('all');
+  const [showOfficerAuditModal, setShowOfficerAuditModal] = useState<boolean>(false);
   const [selectedCompany, setSelectedCompany] = useState<CompanyRecord | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDocUploadModal, setShowDocUploadModal] = useState(false);
@@ -119,14 +122,25 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
 
   const companies = crmService.getCompanies();
   const currentUser = crmService.getCurrentUser();
+  const isRegistryBoss = currentUser?.email.toLowerCase() === 'emyers@geominingec.com';
+  const isRegistryOfficer = currentUser?.role === 'registry_department' && !isRegistryBoss;
   const isRegistryDept = currentUser?.role === 'registry_department';
   const isAdministrator = currentUser?.role === 'administrator';
   const isExecutiveDirector = currentUser?.role === 'management';
   const isSuperAdmin = currentUser?.role === 'super_admin';
+  const canTrackRegistrations = isSuperAdmin || isExecutiveDirector || isRegistryBoss;
   const canManage = crmService.checkPermission('canManageCompanies');
   const canApprove = crmService.checkPermission('canApproveRegistrations');
   const canDelete = crmService.checkPermission('canDeleteRecords');
   const pendingApprovalCount = companies.filter((c) => c.status === 'under_review' || c.status === 'pending').length;
+  const auditLogs = crmService.getAuditLogs().filter((l) => l.module === 'Company Registration');
+  const submittingOfficers = Array.from(
+    new Set(
+      companies
+        .map((c) => c.registeredByName?.trim())
+        .filter((n): n is string => Boolean(n))
+    )
+  );
 
   const handleQuickApprove = (company: CompanyRecord) => {
     crmService.updateCompanyStatus(company.id, 'approved');
@@ -140,6 +154,8 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
       c.registrationNumber.toLowerCase().includes(search.toLowerCase()) ||
       (c.licenseType && c.licenseType.toLowerCase().includes(search.toLowerCase())) ||
       (c.ownerName && c.ownerName.toLowerCase().includes(search.toLowerCase())) ||
+      (c.registeredByName && c.registeredByName.toLowerCase().includes(search.toLowerCase())) ||
+      (c.registeredByEmail && c.registeredByEmail.toLowerCase().includes(search.toLowerCase())) ||
       (c.cityOfOperation && c.cityOfOperation.toLowerCase().includes(search.toLowerCase())) ||
       (c.cellNo && c.cellNo.toLowerCase().includes(search.toLowerCase())) ||
       (c.officeAddress && c.officeAddress.toLowerCase().includes(search.toLowerCase())) ||
@@ -148,8 +164,12 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
 
     const matchesStatus = statusFilter === 'all' || c.status === statusFilter;
     const matchesEntity = entityFilter === 'all' || c.entityType === entityFilter;
+    const matchesOfficer =
+      officerFilter === 'all' ||
+      c.registeredByName?.toLowerCase().includes(officerFilter.toLowerCase()) ||
+      c.registeredByEmail?.toLowerCase() === officerFilter.toLowerCase();
 
-    return matchesSearch && matchesStatus && matchesEntity;
+    return matchesSearch && matchesStatus && matchesEntity && matchesOfficer;
   });
 
   const handleCreateCompany = (e: React.FormEvent) => {
@@ -311,7 +331,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
         )}
       </div>
 
-      {/* Administrator / Executive Director Approval Banner */}
+      {/* Executive Director / Registry Department Boss Approval Banner */}
       {canApprove && pendingApprovalCount > 0 && (
         <div className="bg-gradient-to-r from-amber-50 via-white to-emerald-50 border-2 border-amber-300 rounded-3xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
@@ -324,11 +344,16 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                   {pendingApprovalCount} Company Registration{pendingApprovalCount > 1 ? 's' : ''} Awaiting Approval
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-black uppercase">
-                  {isExecutiveDirector ? 'Executive Director' : isAdministrator ? 'Administrator' : 'Super Admin'} Authorization
+                  {isExecutiveDirector
+                    ? 'Executive Director'
+                    : isRegistryBoss
+                    ? 'Registry Department Boss'
+                    : 'Super Admin'}{' '}
+                  Authorization
                 </span>
               </div>
               <p className="text-xs text-slate-600 mt-0.5 font-medium">
-                Companies registered by the Registry Department require official authorization from either the <strong>Administrator (Z. Teewu)</strong> or <strong>Executive Director (Carlos Etingban)</strong>.
+                Companies registered by Registry Department officers require official statutory authorization from either the <strong>Executive Director (Carlos Etingban)</strong> or the <strong>Registry Department Boss (E. Myers - emyers@geominingec.com)</strong>.
               </p>
             </div>
           </div>
@@ -342,7 +367,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
       )}
 
       {/* Registry Department Intake Informational Notice */}
-      {isRegistryDept && (
+      {isRegistryOfficer && (
         <div className="bg-emerald-50/70 border border-emerald-200 rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-[#2a602f] text-white rounded-2xl shrink-0">
@@ -353,8 +378,80 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                 Registry Department Corporate Intake
               </span>
               <p className="text-xs text-slate-600 mt-0.5 font-medium">
-                New company intake records are placed <strong>Under Review</strong> and routed to either the <strong>Administrator (Z. Teewu)</strong> or <strong>Executive Director (Carlos Etingban)</strong> for statutory authorization.
+                New company intake records are placed <strong>Under Review</strong> and routed to either the <strong>Executive Director (Carlos Etingban)</strong> or <strong>Registry Department Boss (E. Myers)</strong> for statutory authorization.
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cadastral Officer Intake & Accountability Provenance Tracker (Super Admin, Executive Director, Registry Boss) */}
+      {canTrackRegistrations && (
+        <div className="bg-gradient-to-r from-emerald-50/80 via-white to-slate-50 border-2 border-[#2a602f]/20 rounded-3xl p-5 shadow-sm">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="p-3 bg-[#2a602f] text-white rounded-2xl shadow-sm shrink-0">
+                <Shield size={20} className="text-[#ffc30d]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-black text-slate-900 uppercase tracking-tight">
+                    Officer Registry Intake &amp; Provenance Tracker
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#2a602f] text-[#ffc30d] text-[10px] font-black uppercase tracking-wider">
+                    {isExecutiveDirector
+                      ? 'Executive Director Oversight'
+                      : isRegistryBoss
+                      ? 'Registry Department Boss'
+                      : 'Super Admin Authority'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 mt-0.5 font-medium">
+                  Track and verify every officer who entered or created a corporate registry record across Liberia.
+                </p>
+              </div>
+            </div>
+
+            {/* Officer Filter & Audit Trigger */}
+            <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-2xs">
+                <UserCheck size={14} className="text-[#2a602f]" />
+                <span className="text-[10px] font-black uppercase text-slate-400">Filter Officer:</span>
+                <select
+                  value={officerFilter}
+                  onChange={(e) => setOfficerFilter(e.target.value)}
+                  className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
+                >
+                  <option value="all">All Submitting Officers ({companies.length})</option>
+                  <option value="E. Myers">E. Myers (Registry Boss)</option>
+                  <option value="C. Mulbah">C. Mulbah (Registry Dept)</option>
+                  <option value="A. Cooper">A. Cooper (Registry Dept)</option>
+                  <option value="R. Warner">R. Warner (Registry Dept)</option>
+                  <option value="Z. Wleh">Z. Wleh (Registry Dept)</option>
+                  {submittingOfficers
+                    .filter((n) => !['E. Myers', 'C. Mulbah', 'A. Cooper', 'R. Warner', 'Z. Wleh'].some((k) => n.includes(k)))
+                    .map((name) => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                </select>
+              </div>
+
+              {officerFilter !== 'all' && (
+                <button
+                  onClick={() => setOfficerFilter('all')}
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-bold cursor-pointer"
+                >
+                  Clear Filter
+                </button>
+              )}
+
+              <button
+                onClick={() => setShowOfficerAuditModal(true)}
+                className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm cursor-pointer transition-colors"
+              >
+                <Activity size={14} className="text-[#ffc30d]" />
+                <span>Officer Audit Trail</span>
+              </button>
             </div>
           </div>
         </div>
@@ -415,14 +512,15 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                 <th className="py-3.5 px-4">County / City &amp; Office Address</th>
                 <th className="py-3.5 px-4">Application &amp; Expire Dates</th>
                 <th className="py-3.5 px-4">Contact Details</th>
-                <th className="py-3.5 px-4">Status</th>
+                <th className="py-3.5 px-4">Filing Officer (Provenance)</th>
+                <th className="py-3.5 px-4">Status &amp; Approval</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
               {filteredCompanies.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                  <td colSpan={8} className="py-12 text-center text-slate-400">
                     No registered companies found matching the search criteria.
                   </td>
                 </tr>
@@ -494,6 +592,21 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                         </div>
                       </td>
                       <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-1.5 font-bold text-slate-900 text-xs">
+                          <UserCheck size={13} className="text-[#2a602f] shrink-0" />
+                          <span>{comp.registeredByName || 'Official Cadastre Officer'}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-medium truncate max-w-[160px]" title={comp.registeredByEmail}>
+                          {comp.registeredByEmail || 'cadastre@geominingec.com'}
+                        </div>
+                        <div className="flex items-center gap-1 text-[9px] text-slate-400 mt-0.5">
+                          <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-bold">
+                            {comp.registeredByDepartment || comp.registeredByRole?.replace('_', ' ') || 'Registry Dept'}
+                          </span>
+                          <span>• {comp.registeredAt ? comp.registeredAt.substring(0, 10) : comp.dateOfApplication || '—'}</span>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
                         {comp.status === 'under_review' || comp.status === 'pending' ? (
                           <div>
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
@@ -501,7 +614,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                               <span>Pending Approval</span>
                             </span>
                             <div className="text-[9px] text-amber-900 font-bold mt-0.5">
-                              Admin / Exec Dir Review
+                              Exec Dir / Registry Boss Review
                             </div>
                             {comp.registeredByName && (
                               <div className="text-[9px] text-slate-400 truncate max-w-[120px]" title={comp.registeredByName}>
@@ -533,8 +646,8 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                               title={
                                 isExecutiveDirector
                                   ? 'Approve as Executive Director'
-                                  : isAdministrator
-                                  ? 'Approve as Administrator'
+                                  : isRegistryBoss
+                                  ? 'Approve as Registry Department Boss (E. Myers)'
                                   : 'Approve as Super Admin'
                               }
                             >
@@ -636,8 +749,8 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                     <span>
                       {isExecutiveDirector
                         ? 'Executive Director Authority:'
-                        : isAdministrator
-                        ? 'Administrator Authority:'
+                        : isRegistryBoss
+                        ? 'Registry Department Boss Authority:'
                         : 'Super Admin Authority:'}
                     </span>
                   </span>
@@ -677,11 +790,11 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                 </div>
               )}
 
-              {isRegistryDept && (
+              {!canApprove && (
                 <div className="flex items-center gap-2">
                   <div className="text-[11px] text-amber-800 font-semibold flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
                     <Clock size={13} className="text-amber-700" />
-                    <span>Awaiting authorization by either the Administrator (Z. Teewu) or Executive Director (Carlos Etingban)</span>
+                    <span>Awaiting authorization by either the Executive Director (Carlos Etingban) or Registry Department Boss (E. Myers)</span>
                   </div>
                 </div>
               )}
@@ -718,11 +831,11 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                     </div>
                     <div>
                       <div className="text-xs font-black text-amber-950 uppercase tracking-wider">
-                        Awaiting Administrator or Executive Director Authorization
+                        Awaiting Executive Director or Registry Department Boss Authorization
                       </div>
                       <div className="text-xs text-amber-900 font-medium mt-0.5">
                         {selectedCompany.registeredByName ? `Submitted by ${selectedCompany.registeredByName}. ` : ''}
-                        Corporate registration records added by the Registry Department must be authorized by either the <strong>Administrator (Z. Teewu)</strong> or <strong>Executive Director (Carlos Etingban)</strong>.
+                        Corporate registration records added by Registry Department officers must be authorized by either the <strong>Executive Director (Carlos Etingban)</strong> or the <strong>Registry Department Boss (E. Myers - emyers@geominingec.com)</strong>.
                       </div>
                     </div>
                   </div>
@@ -737,6 +850,95 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                   )}
                 </div>
               )}
+              {/* Cadastral Chain of Custody & Officer Intake Provenance Card */}
+              <div className="bg-slate-50 border-2 border-slate-200/90 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                  <div className="flex items-center gap-2">
+                    <Shield size={14} className="text-[#2a602f]" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#2a602f]">
+                      Cadastral Chain of Custody &amp; Officer Provenance
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-slate-200 text-slate-700">
+                    Statutory Audit Trail
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                  {/* Officer Info */}
+                  <div className="bg-white p-3 rounded-xl border border-slate-200/80">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">
+                      Filing / Intake Officer
+                    </span>
+                    <div className="font-black text-slate-900 text-xs flex items-center gap-1">
+                      <UserCheck size={13} className="text-[#2a602f]" />
+                      <span>{selectedCompany.registeredByName || 'Official Cadastre Officer'}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-0.5 truncate" title={selectedCompany.registeredByEmail}>
+                      {selectedCompany.registeredByEmail || 'cadastre@geominingec.com'}
+                    </div>
+                    <div className="text-[9px] text-slate-400 mt-1 font-semibold">
+                      Dept: {selectedCompany.registeredByDepartment || selectedCompany.registeredByRole?.replace('_', ' ') || 'Registry Department'}
+                    </div>
+                  </div>
+
+                  {/* Filing Timestamp */}
+                  <div className="bg-white p-3 rounded-xl border border-slate-200/80">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">
+                      Filing Timestamp &amp; Intake
+                    </span>
+                    <div className="font-black text-slate-900 text-xs flex items-center gap-1">
+                      <Clock size={13} className="text-[#2a602f]" />
+                      <span>
+                        {selectedCompany.registeredAt
+                          ? selectedCompany.registeredAt.replace('T', ' ').substring(0, 19)
+                          : selectedCompany.dateOfApplication || selectedCompany.registrationDate || '—'}
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">
+                      Jurisdiction: {selectedCompany.jurisdiction || 'Monrovia, Republic of Liberia'}
+                    </div>
+                    <div className="text-[9px] text-emerald-700 font-bold mt-1">
+                      Initial Status: {selectedCompany.status === 'under_review' ? 'Submitted Under Review' : selectedCompany.status.toUpperCase()}
+                    </div>
+                  </div>
+
+                  {/* Statutory Authority Status */}
+                  <div className="bg-white p-3 rounded-xl border border-slate-200/80 sm:col-span-2 md:col-span-1">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">
+                      Statutory Authorization Authority
+                    </span>
+                    {selectedCompany.approvedBy ? (
+                      <div>
+                        <div className="font-black text-emerald-800 text-xs flex items-center gap-1">
+                          <CheckCircle2 size={13} className="text-[#2a602f]" />
+                          <span>{selectedCompany.approvedBy}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">
+                          Authorized on: {selectedCompany.approvedAt || 'Official Record'}
+                        </div>
+                        <div className="text-[9px] font-black uppercase text-[#2a602f] mt-1">
+                          Executive Seal Verified
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="font-bold text-amber-800 text-xs flex items-center gap-1">
+                          <Clock size={13} className="text-amber-600" />
+                          <span>Awaiting Authorization</span>
+                        </div>
+                        <div className="text-[10px] text-amber-700 mt-0.5">
+                          Executive Director or Registry Boss (E. Myers)
+                        </div>
+                        <div className="text-[9px] font-bold text-slate-400 mt-1">
+                          Action Required before activation
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Row 1: License Type + Entity */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-200">
@@ -960,6 +1162,29 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
 
             <form onSubmit={handleCreateCompany} className="space-y-5 text-xs">
 
+              {/* Officer Provenance Identity Banner */}
+              <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 bg-[#2a602f] text-white rounded-lg shrink-0">
+                    <UserCheck size={14} />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[#2a602f] block">
+                      Filing Officer Credentials:
+                    </span>
+                    <span className="text-slate-700 font-bold">
+                      {currentUser?.name || 'Authorized Officer'}
+                    </span>{' '}
+                    <span className="text-slate-500">
+                      ({currentUser?.email || 'officer@geominingec.com'} • {isRegistryBoss ? 'Registry Boss' : currentUser?.department || 'Registry Dept'})
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-[#2a602f] border border-emerald-300 shrink-0">
+                  Audit Tracked
+                </span>
+              </div>
+
               {/* ── SECTION 1: Company Name & License Type ── */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 pb-1 border-b border-slate-100">
@@ -1066,7 +1291,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                     <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
                       Status / Workflow
                     </label>
-                    {isRegistryDept ? (
+                    {isRegistryOfficer ? (
                       <div className="w-full p-2 bg-amber-50 border border-amber-300 rounded-xl font-bold text-amber-950 text-xs flex flex-col justify-center">
                         <div className="flex items-center justify-between">
                           <span>Under Review</span>
@@ -1075,7 +1300,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                           </span>
                         </div>
                         <span className="text-[9px] font-medium text-amber-800 mt-0.5">
-                          Requires Admin or Exec Dir approval
+                          Requires Executive Director or Registry Boss approval
                         </span>
                       </div>
                     ) : (
@@ -1235,7 +1460,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                   <div className="text-xs text-amber-950">
                     <span className="font-black uppercase tracking-wider block">Statutory Executive Approval Required</span>
                     <span className="text-amber-900 mt-0.5 block">
-                      This company record will be submitted <strong>Under Review</strong>. Official cadastre approval must be authorized by either the <strong>Administrator (Z. Teewu)</strong> or the <strong>Executive Director (Carlos Etingban)</strong> before becoming active.
+                      This company record will be submitted <strong>Under Review</strong>. Official cadastre approval must be authorized by either the <strong>Executive Director (Carlos Etingban)</strong> or the <strong>Registry Department Boss (E. Myers)</strong> before becoming active.
                     </span>
                   </div>
                 </div>
@@ -1346,6 +1571,93 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
           recordTitle={commentTargetCompany.companyName}
           recordReference={commentTargetCompany.registrationNumber}
         />
+      )}
+
+      {/* Officer Intake Audit Modal (Super Admin, Executive Director, Registry Boss) */}
+      {showOfficerAuditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+          <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setShowOfficerAuditModal(false)} />
+          <div className="relative bg-white w-full max-w-3xl max-h-[88vh] overflow-y-auto rounded-3xl shadow-2xl p-6 sm:p-8 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-200 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-[#2a602f] text-white rounded-xl shadow-sm">
+                  <Activity size={20} className="text-[#ffc30d]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+                      Cadastral Officer Intake &amp; Registration Trail
+                    </h2>
+                    <span className="px-2 py-0.5 rounded-full bg-[#ffc30d]/20 text-emerald-900 text-[10px] font-black uppercase">
+                      Provenance Log
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Official chain of custody records for every corporate entity registration in the Republic of Liberia
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowOfficerAuditModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {auditLogs.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 text-xs">
+                  No company registration audit trail records logged yet.
+                </div>
+              ) : (
+                auditLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-[#2a602f] text-[#ffc30d] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5 shadow-2xs">
+                        {log.action.substring(0, 1)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-slate-900">{log.userName}</span>
+                          <span className="px-2 py-0.5 rounded-md bg-slate-200/80 text-slate-700 text-[9px] font-black uppercase">
+                            {log.userRole.replace('_', ' ')}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-[#2a602f] text-[9px] font-black uppercase border border-emerald-200">
+                            {log.action}
+                          </span>
+                          {log.targetRecordName && (
+                            <span className="font-bold text-[#2a602f]">
+                              {log.targetRecordName}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-slate-600 mt-1 text-[11px] leading-relaxed">{log.details}</p>
+                      </div>
+                    </div>
+
+                    <div className="text-[11px] text-slate-400 whitespace-nowrap shrink-0 flex items-center gap-1 self-end sm:self-center">
+                      <Clock size={12} />
+                      <span>{log.timestamp}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="pt-4 mt-6 flex justify-end border-t border-slate-100">
+              <button
+                onClick={() => setShowOfficerAuditModal(false)}
+                className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer"
+              >
+                Close Audit Trail
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

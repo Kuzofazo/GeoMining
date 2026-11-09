@@ -106,7 +106,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
   },
   administrator: {
     canManageCompanies: false,
-    canApproveRegistrations: true, // Administrator has authority to approve companies registered by Registry Dept
+    canApproveRegistrations: false, // Approval restricted to Executive Director or Registry Boss (emyers@geominingec.com)
     canManageLicenses: false,
     canApproveCompliance: false,
     canManageClients: false,
@@ -361,9 +361,13 @@ class CRMStore {
         primaryPhone: c.primaryPhone || c.cellNo || init?.primaryPhone || '+231 77 000 0000',
         registeredByRole: c.registeredByRole || init?.registeredByRole,
         registeredByName: c.registeredByName || init?.registeredByName,
-        approvedBy: c.approvedBy || init?.approvedBy,
+        registeredByEmail: c.registeredByEmail || init?.registeredByEmail,
+        registeredByDepartment: c.registeredByDepartment || init?.registeredByDepartment,
+        registeredAt: c.registeredAt || init?.registeredAt || c.createdAt,
+        approvedBy: (c.id === 'comp-02' && c.approvedBy?.includes('Z. Teewu')) ? init?.approvedBy : (c.approvedBy || init?.approvedBy),
         approvedAt: c.approvedAt || init?.approvedAt,
-        approvedByRole: c.approvedByRole || init?.approvedByRole,
+        approvedByRole: (c.id === 'comp-02' && c.approvedBy?.includes('Z. Teewu')) ? init?.approvedByRole : (c.approvedByRole || init?.approvedByRole),
+        approvedByEmail: c.approvedByEmail || init?.approvedByEmail,
       };
     });
     saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
@@ -814,6 +818,11 @@ class CRMStore {
 
   public checkPermission(action: keyof RolePermissions): boolean {
     if (!this.currentUser) return false;
+    // Statutory rule: E. Myers (emyers@geominingec.com) is the Registry Department Boss
+    // and has statutory authority to approve company registrations
+    if (action === 'canApproveRegistrations' && this.currentUser.email.toLowerCase() === 'emyers@geominingec.com') {
+      return true;
+    }
     return ROLE_PERMISSIONS[this.currentUser.role]?.[action] ?? false;
   }
 
@@ -906,14 +915,23 @@ class CRMStore {
       return null;
     }
 
-    const isRegistry = this.currentUser?.role === 'registry_department';
+    const isRegistryBoss = this.currentUser?.email.toLowerCase() === 'emyers@geominingec.com';
+    const isRegistryOfficer = this.currentUser?.role === 'registry_department' && !isRegistryBoss;
+    const officerDept = isRegistryBoss
+      ? 'Registry Department (Head / Boss)'
+      : this.currentUser?.department || (this.currentUser?.role === 'registry_department' ? 'Registry Department' : this.currentUser?.role || 'Cadastre Operations');
+
     const newCompany: CompanyRecord = {
       ...data,
       id: `comp-${Date.now()}`,
-      // When added by Registry Department, it MUST default to 'under_review' awaiting approval from Administrator or Executive Director
-      status: isRegistry ? 'under_review' : data.status,
+      // When added by regular Registry Department officers, it MUST default to 'under_review' awaiting approval from Executive Director or Registry Boss E. Myers
+      status: isRegistryOfficer ? 'under_review' : data.status,
       registeredByRole: this.currentUser?.role,
       registeredByName: this.currentUser?.name,
+      registeredByEmail: this.currentUser?.email,
+      registeredByDepartment: officerDept,
+      registeredByUserId: this.currentUser?.id,
+      registeredAt: new Date().toISOString(),
       documents: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -921,29 +939,31 @@ class CRMStore {
     this.companies = [newCompany, ...this.companies];
     saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
 
-    if (isRegistry) {
+    // Audit trail logging with complete officer provenance tracking
+    this.logAudit(
+      'CREATE',
+      'Company Registration',
+      `New company registration filed by Officer ${this.currentUser?.name || 'Authorized User'} (${this.currentUser?.email || 'N/A'}, ${officerDept}): "${newCompany.companyName}" [${newCompany.registrationNumber}]. Status: ${newCompany.status}.`,
+      newCompany.id,
+      newCompany.companyName
+    );
+
+    if (isRegistryOfficer) {
       this.addNotification({
         type: 'warning',
-        title: 'New Company Pending Approval',
-        message: `"${newCompany.companyName}" was submitted by ${this.currentUser?.name || 'Registry Department'}. Awaiting statutory authorization by the Administrator (Z. Teewu) or Executive Director (Carlos Etingban).`,
+        title: 'New Company Pending Statutory Approval',
+        message: `Officer ${this.currentUser?.name} (${this.currentUser?.email}) registered "${newCompany.companyName}" (${newCompany.registrationNumber}). Awaiting statutory authorization by either the Executive Director (Carlos Etingban) or Registry Department Boss (E. Myers).`,
         relatedModule: 'Company Registration',
         relatedId: newCompany.id,
       });
-      this.logAudit(
-        'CREATE',
-        'Company Registration',
-        `Registry Department (${this.currentUser?.name}) registered entity: ${newCompany.companyName} (${newCompany.registrationNumber}). Awaiting Administrator or Executive Director approval.`,
-        newCompany.id,
-        newCompany.companyName
-      );
     } else {
-      this.logAudit(
-        'CREATE',
-        'Company Registration',
-        `Created new company entity: ${newCompany.companyName} (${newCompany.registrationNumber})`,
-        newCompany.id,
-        newCompany.companyName
-      );
+      this.addNotification({
+        type: 'info',
+        title: 'New Company Registered',
+        message: `"${newCompany.companyName}" (${newCompany.registrationNumber}) was successfully recorded in the Cadastre by ${this.currentUser?.name} (${this.currentUser?.email}).`,
+        relatedModule: 'Company Registration',
+        relatedId: newCompany.id,
+      });
     }
 
     this.notify();
@@ -985,14 +1005,16 @@ class CRMStore {
     company.updatedAt = new Date().toISOString();
 
     if (status === 'approved' || status === 'active') {
-      const roleTitle = this.currentUser?.role === 'administrator'
-        ? 'Administrator'
+      const isRegistryBoss = this.currentUser?.email.toLowerCase() === 'emyers@geominingec.com';
+      const roleTitle = isRegistryBoss
+        ? 'Registry Department Boss'
         : this.currentUser?.role === 'management'
         ? 'Executive Director'
         : 'Super Admin';
       company.approvedBy = `${this.currentUser?.name || 'Authorized Official'} (${roleTitle})`;
       company.approvedAt = new Date().toISOString().substring(0, 10);
       company.approvedByRole = this.currentUser?.role;
+      company.approvedByEmail = this.currentUser?.email;
 
       this.addNotification({
         type: 'success',
@@ -1004,7 +1026,7 @@ class CRMStore {
       this.logAudit(
         'STATUS_CHANGE',
         'Company Registration',
-        `Company "${company.companyName}" authorized and approved by ${company.approvedBy}`,
+        `Company "${company.companyName}" statutorily authorized and approved by ${company.approvedBy} (${this.currentUser?.email})`,
         id,
         company.companyName
       );
