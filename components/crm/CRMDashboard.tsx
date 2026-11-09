@@ -17,6 +17,7 @@ import {
   Users2,
   Activity,
   PlusCircle,
+  Plus,
   Download,
   UserCheck,
   Shield,
@@ -534,62 +535,85 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {companies.slice(0, 6).map((comp) => {
-              const officerName = comp.registeredByName || 'Official Cadastre Officer';
-              const officerEmail = comp.registeredByEmail || 'N/A';
-              const officerDept = comp.registeredByDepartment || comp.registeredByRole?.replace('_', ' ') || 'Registry Dept';
-              const filedDate = comp.registeredAt ? comp.registeredAt.substring(0, 10) : comp.dateOfApplication || comp.registrationDate || '—';
-              const isPending = comp.status === 'under_review' || comp.status === 'pending';
-
-              return (
-                <div
-                  key={comp.id}
-                  onClick={() => onSelectTab('companies')}
-                  className="p-4 rounded-2xl border border-slate-200 hover:border-[#2a602f] bg-slate-50/60 hover:bg-white transition-all cursor-pointer group shadow-2xs"
+          {companies.length === 0 ? (
+            <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-2xl">
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-[#2d5a27] border border-emerald-200 flex items-center justify-center mx-auto mb-2.5">
+                <Building2 size={22} />
+              </div>
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 mb-1">
+                Cadastre Ready for Fresh Intake
+              </h4>
+              <p className="text-xs text-slate-500 max-w-md mx-auto mb-3">
+                All legacy company records have been cleared. The Registry Department can now record and submit new companies directly.
+              </p>
+              {canManageCompanies && (
+                <button
+                  onClick={onOpenNewCompanyModal}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#2a602f] hover:bg-emerald-800 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-sm cursor-pointer"
                 >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <span className="font-bold text-slate-900 text-xs line-clamp-1 group-hover:text-[#2a602f] transition-colors">
-                      {comp.companyName}
-                    </span>
-                    {isPending ? (
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-100 text-amber-900 border border-amber-300 shrink-0">
-                        Under Review
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 text-emerald-900 border border-emerald-200 shrink-0">
-                        {comp.status}
-                      </span>
-                    )}
-                  </div>
+                  <Plus size={14} className="text-[#ffc30d]" />
+                  <span>Register Company</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {companies.slice(0, 6).map((comp) => {
+                const officerName = comp.registeredByName || 'Official Cadastre Officer';
+                const officerEmail = comp.registeredByEmail || 'N/A';
+                const officerDept = comp.registeredByDepartment || comp.registeredByRole?.replace('_', ' ') || 'Registry Dept';
+                const filedDate = comp.registeredAt ? comp.registeredAt.substring(0, 10) : comp.dateOfApplication || comp.registrationDate || '—';
+                const isPending = comp.status === 'under_review' || comp.status === 'pending';
 
-                  <div className="text-[11px] text-slate-500 font-mono mb-2">
-                    {comp.registrationNumber} • {comp.county} County
-                  </div>
-
-                  {/* Officer Intake Tracking Box */}
-                  <div className="pt-2 border-t border-slate-200/80 space-y-1">
-                    <div className="flex items-center gap-1.5 text-xs">
-                      <UserCheck size={12} className="text-[#2a602f] shrink-0" />
-                      <span className="text-[10px] text-slate-400 font-semibold">Entered by:</span>
-                      <strong className="text-slate-900 text-[11px] truncate">{officerName}</strong>
-                    </div>
-                    <div className="text-[10px] text-slate-500 pl-4 truncate">
-                      {officerEmail} • <span className="text-slate-400">{officerDept}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 pl-4 pt-0.5">
-                      <span>Filed: {filedDate}</span>
-                      {comp.approvedBy && (
-                        <span className="text-emerald-700 font-bold truncate max-w-[130px]" title={comp.approvedBy}>
-                          ✓ {comp.approvedBy.split('(')[0].trim()}
+                return (
+                  <div
+                    key={comp.id}
+                    onClick={() => onSelectTab('companies')}
+                    className="p-4 rounded-2xl border border-slate-200 hover:border-[#2a602f] bg-slate-50/60 hover:bg-white transition-all cursor-pointer group shadow-2xs"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <span className="font-bold text-slate-900 text-xs line-clamp-1 group-hover:text-[#2a602f] transition-colors">
+                        {comp.companyName}
+                      </span>
+                      {isPending ? (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-100 text-amber-900 border border-amber-300 shrink-0">
+                          Under Review
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 text-emerald-900 border border-emerald-200 shrink-0">
+                          {comp.status}
                         </span>
                       )}
                     </div>
+
+                    <div className="text-[11px] text-slate-500 font-mono mb-2">
+                      {comp.registrationNumber} • {comp.county} County
+                    </div>
+
+                    {/* Officer Intake Tracking Box */}
+                    <div className="pt-2 border-t border-slate-200/80 space-y-1">
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <UserCheck size={12} className="text-[#2a602f] shrink-0" />
+                        <span className="text-[10px] text-slate-400 font-semibold">Entered by:</span>
+                        <strong className="text-slate-900 text-[11px] truncate">{officerName}</strong>
+                      </div>
+                      <div className="text-[10px] text-slate-500 pl-4 truncate">
+                        {officerEmail} • <span className="text-slate-400">{officerDept}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 pl-4 pt-0.5">
+                        <span>Filed: {filedDate}</span>
+                        {comp.approvedBy && (
+                          <span className="text-emerald-700 font-bold truncate max-w-[130px]" title={comp.approvedBy}>
+                            ✓ {comp.approvedBy.split('(')[0].trim()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

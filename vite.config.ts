@@ -55,6 +55,10 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/supabase_api/, ''),
         },
+        '/api': {
+          target: 'https://geominingec.com',
+          changeOrigin: true,
+        },
       },
     },
 

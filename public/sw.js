@@ -22,6 +22,8 @@ const ASSET_CACHE_PATTERNS = [
 const NEVER_CACHE_PATTERNS = [
   /\/supabase_api\//,
   /supabase\.co/,
+  /\/api\//,
+  /\.php/,
   /formspree\.io/,
   /formsubmit\.co/,
   /googleapis\.com\/css/, // Google Fonts CSS (has its own caching)

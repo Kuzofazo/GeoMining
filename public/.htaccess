@@ -20,8 +20,9 @@
   RewriteEngine On
   RewriteBase /
 
-  # Always serve files in /Present/ directly (never rewrite to SPA)
+  # Always serve files in /Present/ and /api/ directly (never rewrite to SPA)
   RewriteRule ^Present/ - [L]
+  RewriteRule ^api/ - [L]
 
   # Serve existing files/directories as-is
   RewriteRule ^index\.html$ - [L]

@@ -283,30 +283,6 @@ const INITIAL_SECURITY_ALERTS: SecurityAlert[] = [
 
 const INITIAL_RECORD_COMMENTS: RecordComment[] = [
   {
-    id: 'cmt-01',
-    recordId: 'comp-01',
-    recordType: 'company',
-    recordReference: 'LBR-CORP-2024-0881',
-    userId: 'usr-ed-01',
-    userName: 'Carlos Etingban',
-    userRole: 'management',
-    department: 'Executive Directorate',
-    timestamp: '2026-11-08 17:30',
-    content: 'Executive observation: Noted complete incorporation filing. Awaiting final MME surface rental clearance before board sign-off.',
-  },
-  {
-    id: 'cmt-02',
-    recordId: 'comp-01',
-    recordType: 'company',
-    recordReference: 'LBR-CORP-2024-0881',
-    userId: 'usr-adm-01',
-    userName: 'Z. Teewu',
-    userRole: 'administrator',
-    department: 'System & Concession Administration',
-    timestamp: '2026-11-08 18:15',
-    content: 'Administrative review completed. Concession boundary verified against Nimba Range survey coordinates.',
-  },
-  {
     id: 'cmt-03',
     recordId: 'lic-01',
     recordType: 'license',
@@ -319,6 +295,32 @@ const INITIAL_RECORD_COMMENTS: RecordComment[] = [
     content: 'Executive observation: 21 days remaining until annual expiration. Ensure MME cadastre liaison expedites renewal dossier.',
   },
 ];
+
+// ─── Backend Cadastre Persistence Client ───────────────────────────────────
+async function fetchCompanyApi(endpointOrParams: string = '', options: RequestInit = {}): Promise<Response> {
+  const primaryUrl = `/api/crm-companies.php${endpointOrParams}`;
+  try {
+    const res = await fetch(primaryUrl, options);
+    if (
+      res.status === 404 &&
+      typeof window !== 'undefined' &&
+      window.location.hostname !== 'geominingec.com' &&
+      window.location.hostname !== 'www.geominingec.com'
+    ) {
+      return await fetch(`https://geominingec.com/api/crm-companies.php${endpointOrParams}`, options);
+    }
+    return res;
+  } catch (err) {
+    if (
+      typeof window !== 'undefined' &&
+      window.location.hostname !== 'geominingec.com' &&
+      window.location.hostname !== 'www.geominingec.com'
+    ) {
+      return await fetch(`https://geominingec.com/api/crm-companies.php${endpointOrParams}`, options);
+    }
+    throw err;
+  }
+}
 
 // ─── In-Memory & LocalStorage CRM Store ─────────────────────────────────────
 class CRMStore {
@@ -341,35 +343,17 @@ class CRMStore {
   }
 
   private init() {
-    this.companies = loadFromStorage(STORAGE_KEYS.COMPANIES, INITIAL_COMPANIES);
+    // Statutory migration: Clean legacy cached company seed data to ensure fresh Cadastre intake
+    const CADASTRE_DATA_VERSION = 'gmec_cadastre_v4_clean_2026';
+    if (typeof localStorage !== 'undefined') {
+      const storedVersion = localStorage.getItem('gmec_cadastre_version');
+      if (storedVersion !== CADASTRE_DATA_VERSION) {
+        localStorage.removeItem(STORAGE_KEYS.COMPANIES);
+        localStorage.setItem('gmec_cadastre_version', CADASTRE_DATA_VERSION);
+      }
+    }
 
-    // Enrich stored companies with statutory fields from INITIAL_COMPANIES or defaults
-    const initialCompMap = new Map<string, CompanyRecord>();
-    INITIAL_COMPANIES.forEach((c) => initialCompMap.set(c.id, c));
-    this.companies = this.companies.map((c) => {
-      const init = initialCompMap.get(c.id);
-      return {
-        ...c,
-        licenseType: c.licenseType || init?.licenseType || 'Mineral Exploration License',
-        dateOfApplication: c.dateOfApplication || init?.dateOfApplication || c.registrationDate || new Date().toISOString().substring(0, 10),
-        expiryDate: c.expiryDate || init?.expiryDate || c.annualRenewalDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
-        cityOfOperation: c.cityOfOperation || init?.cityOfOperation || (c.county === 'Nimba' ? 'Sanniquellie' : c.county === 'Bong' ? 'Gbarnga' : 'Monrovia'),
-        officeAddress: c.officeAddress || c.registeredAddress || init?.officeAddress || 'Monrovia, Liberia',
-        registeredAddress: c.registeredAddress || c.officeAddress || init?.registeredAddress || 'Monrovia, Liberia',
-        ownerName: c.ownerName || (c.directors && c.directors[0]?.name) || init?.ownerName || 'Principal Owner',
-        cellNo: c.cellNo || c.primaryPhone || init?.cellNo || '+231 77 000 0000',
-        primaryPhone: c.primaryPhone || c.cellNo || init?.primaryPhone || '+231 77 000 0000',
-        registeredByRole: c.registeredByRole || init?.registeredByRole,
-        registeredByName: c.registeredByName || init?.registeredByName,
-        registeredByEmail: c.registeredByEmail || init?.registeredByEmail,
-        registeredByDepartment: c.registeredByDepartment || init?.registeredByDepartment,
-        registeredAt: c.registeredAt || init?.registeredAt || c.createdAt,
-        approvedBy: (c.id === 'comp-02' && c.approvedBy?.includes('Z. Teewu')) ? init?.approvedBy : (c.approvedBy || init?.approvedBy),
-        approvedAt: c.approvedAt || init?.approvedAt,
-        approvedByRole: (c.id === 'comp-02' && c.approvedBy?.includes('Z. Teewu')) ? init?.approvedByRole : (c.approvedByRole || init?.approvedByRole),
-        approvedByEmail: c.approvedByEmail || init?.approvedByEmail,
-      };
-    });
+    this.companies = loadFromStorage(STORAGE_KEYS.COMPANIES, INITIAL_COMPANIES);
     saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
 
     this.licenses = loadFromStorage(STORAGE_KEYS.LICENSES, INITIAL_MINING_LICENSES);
@@ -423,6 +407,19 @@ class CRMStore {
           securityAlarm.triggerAlarm();
         }, 1500);
       }
+    }
+
+    // Real-time synchronization with persistent backend database
+    if (typeof window !== 'undefined') {
+      this.syncFromBackend();
+      // Periodic synchronization every 30 seconds
+      setInterval(() => {
+        this.syncFromBackend();
+      }, 30000);
+      // Synchronize immediately when browser tab regains focus
+      window.addEventListener('focus', () => {
+        this.syncFromBackend();
+      });
     }
   }
 
@@ -909,10 +906,70 @@ class CRMStore {
     return this.companies.find((c) => c.id === id);
   }
 
-  public addCompany(data: Omit<CompanyRecord, 'id' | 'createdAt' | 'updatedAt' | 'documents'>): CompanyRecord | null {
+  public async syncFromBackend(): Promise<{ success: boolean; count: number; error?: string }> {
+    try {
+      const res = await fetchCompanyApi();
+      if (!res.ok) {
+        return { success: false, count: this.companies.length, error: `HTTP ${res.status}` };
+      }
+      const data = await res.json();
+      if (data && data.success && Array.isArray(data.data)) {
+        this.companies = data.data;
+        saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
+        this.notify();
+        return { success: true, count: this.companies.length };
+      }
+      return { success: false, count: this.companies.length, error: data?.error || 'Invalid backend format' };
+    } catch (err: any) {
+      console.warn('[CRM Cadastre] Backend sync deferred (using local cache):', err?.message || err);
+      return { success: false, count: this.companies.length, error: err?.message || 'Network error' };
+    }
+  }
+
+  public async addCompany(data: Omit<CompanyRecord, 'id' | 'createdAt' | 'updatedAt' | 'documents'>): Promise<{
+    success: boolean;
+    error?: string;
+    company?: CompanyRecord;
+    message?: string;
+  }> {
     if (!this.checkPermission('canManageCompanies')) {
       console.warn('[RBAC Denial] addCompany called without canManageCompanies');
-      return null;
+      return {
+        success: false,
+        error: 'Unauthorized: Your assigned role does not have permission to register companies in the Cadastre.',
+      };
+    }
+
+    const companyNameTrimmed = data.companyName.trim();
+    const regNumberTrimmed = data.registrationNumber.trim();
+
+    // Comprehensive Field Validation
+    if (!companyNameTrimmed || companyNameTrimmed.length < 2) {
+      return { success: false, error: 'Validation Error: Company Legal Name is required (minimum 2 characters).' };
+    }
+    if (!regNumberTrimmed) {
+      return { success: false, error: 'Validation Error: Official Registration Number is required.' };
+    }
+
+    // Client-side Duplicate Detection (Instant feedback)
+    const duplicateName = this.companies.find(
+      (c) => c.companyName.trim().toLowerCase() === companyNameTrimmed.toLowerCase()
+    );
+    if (duplicateName) {
+      return {
+        success: false,
+        error: `Duplicate Record: A company with the legal name "${companyNameTrimmed}" already exists in the Cadastre.`,
+      };
+    }
+
+    const duplicateReg = this.companies.find(
+      (c) => c.registrationNumber.trim().toLowerCase() === regNumberTrimmed.toLowerCase()
+    );
+    if (duplicateReg) {
+      return {
+        success: false,
+        error: `Duplicate Record: Registration Number "${regNumberTrimmed}" is already registered to "${duplicateReg.companyName}".`,
+      };
     }
 
     const isRegistryBoss = this.currentUser?.email.toLowerCase() === 'emyers@geominingec.com';
@@ -921,9 +978,12 @@ class CRMStore {
       ? 'Registry Department (Head / Boss)'
       : this.currentUser?.department || (this.currentUser?.role === 'registry_department' ? 'Registry Department' : this.currentUser?.role || 'Cadastre Operations');
 
+    const now = new Date().toISOString();
     const newCompany: CompanyRecord = {
       ...data,
       id: `comp-${Date.now()}`,
+      companyName: companyNameTrimmed,
+      registrationNumber: regNumberTrimmed,
       // When added by regular Registry Department officers, it MUST default to 'under_review' awaiting approval from Executive Director or Registry Boss E. Myers
       status: isRegistryOfficer ? 'under_review' : data.status,
       registeredByRole: this.currentUser?.role,
@@ -931,43 +991,72 @@ class CRMStore {
       registeredByEmail: this.currentUser?.email,
       registeredByDepartment: officerDept,
       registeredByUserId: this.currentUser?.id,
-      registeredAt: new Date().toISOString(),
+      registeredAt: now,
       documents: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
-    this.companies = [newCompany, ...this.companies];
-    saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
 
-    // Audit trail logging with complete officer provenance tracking
-    this.logAudit(
-      'CREATE',
-      'Company Registration',
-      `New company registration filed by Officer ${this.currentUser?.name || 'Authorized User'} (${this.currentUser?.email || 'N/A'}, ${officerDept}): "${newCompany.companyName}" [${newCompany.registrationNumber}]. Status: ${newCompany.status}.`,
-      newCompany.id,
-      newCompany.companyName
-    );
+    // Commit to persistent backend database
+    try {
+      const res = await fetchCompanyApi('', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCompany),
+      });
 
-    if (isRegistryOfficer) {
-      this.addNotification({
-        type: 'warning',
-        title: 'New Company Pending Statutory Approval',
-        message: `Officer ${this.currentUser?.name} (${this.currentUser?.email}) registered "${newCompany.companyName}" (${newCompany.registrationNumber}). Awaiting statutory authorization by either the Executive Director (Carlos Etingban) or Registry Department Boss (E. Myers).`,
-        relatedModule: 'Company Registration',
-        relatedId: newCompany.id,
-      });
-    } else {
-      this.addNotification({
-        type: 'info',
-        title: 'New Company Registered',
-        message: `"${newCompany.companyName}" (${newCompany.registrationNumber}) was successfully recorded in the Cadastre by ${this.currentUser?.name} (${this.currentUser?.email}).`,
-        relatedModule: 'Company Registration',
-        relatedId: newCompany.id,
-      });
+      const resData = await res.json().catch(() => null);
+
+      if (!res.ok || !resData?.success) {
+        const errorMsg = resData?.error || `Backend database error (HTTP ${res.status}). Failed to commit company record.`;
+        return { success: false, error: errorMsg };
+      }
+
+      const committedCompany: CompanyRecord = resData.data || resData.company || newCompany;
+
+      this.companies = [committedCompany, ...this.companies.filter((c) => c.id !== committedCompany.id)];
+      saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
+
+      // Audit trail logging with complete officer provenance tracking
+      this.logAudit(
+        'CREATE',
+        'Company Registration',
+        `New company registration filed by Officer ${this.currentUser?.name || 'Authorized User'} (${this.currentUser?.email || 'N/A'}, ${officerDept}): "${committedCompany.companyName}" [${committedCompany.registrationNumber}]. Committed to database. Status: ${committedCompany.status}.`,
+        committedCompany.id,
+        committedCompany.companyName
+      );
+
+      if (isRegistryOfficer) {
+        this.addNotification({
+          type: 'warning',
+          title: 'New Company Pending Statutory Approval',
+          message: `Officer ${this.currentUser?.name} (${this.currentUser?.email}) registered "${committedCompany.companyName}" (${committedCompany.registrationNumber}). Awaiting statutory authorization by either the Executive Director (Carlos Etingban) or Registry Department Boss (E. Myers).`,
+          relatedModule: 'Company Registration',
+          relatedId: committedCompany.id,
+        });
+      } else {
+        this.addNotification({
+          type: 'success',
+          title: 'New Company Registered & Persisted',
+          message: `"${committedCompany.companyName}" (${committedCompany.registrationNumber}) was successfully recorded and committed to the backend database by ${this.currentUser?.name} (${this.currentUser?.email}).`,
+          relatedModule: 'Company Registration',
+          relatedId: committedCompany.id,
+        });
+      }
+
+      this.notify();
+      return {
+        success: true,
+        company: committedCompany,
+        message: resData.message || 'Company successfully recorded and committed to the backend database.',
+      };
+    } catch (err: any) {
+      console.error('[CRM Backend Error] Failed to persist company:', err);
+      return {
+        success: false,
+        error: `Database Connection Failure: Unable to persist company to the backend server (${err?.message || 'Network error'}). Please verify connectivity.`,
+      };
     }
-
-    this.notify();
-    return newCompany;
   }
 
   public updateCompany(id: string, updates: Partial<CompanyRecord>): CompanyRecord | null {
@@ -988,6 +1077,14 @@ class CRMStore {
     saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
     this.logAudit('UPDATE', 'Company Registration', `Updated registration details for: ${oldName}`, id, oldName);
     this.notify();
+
+    // Asynchronously commit updates to backend database
+    fetchCompanyApi('?action=update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...updates, updatedAt: this.companies[index].updatedAt }),
+    }).catch((err) => console.warn('[CRM Backend] Company update sync deferred:', err));
+
     return this.companies[index];
   }
 
@@ -1004,6 +1101,12 @@ class CRMStore {
     company.status = status;
     company.updatedAt = new Date().toISOString();
 
+    const updatesForBackend: Partial<CompanyRecord> = {
+      id,
+      status,
+      updatedAt: company.updatedAt,
+    };
+
     if (status === 'approved' || status === 'active') {
       const isRegistryBoss = this.currentUser?.email.toLowerCase() === 'emyers@geominingec.com';
       const roleTitle = isRegistryBoss
@@ -1015,6 +1118,11 @@ class CRMStore {
       company.approvedAt = new Date().toISOString().substring(0, 10);
       company.approvedByRole = this.currentUser?.role;
       company.approvedByEmail = this.currentUser?.email;
+
+      updatesForBackend.approvedBy = company.approvedBy;
+      updatesForBackend.approvedAt = company.approvedAt;
+      updatesForBackend.approvedByRole = company.approvedByRole;
+      updatesForBackend.approvedByEmail = company.approvedByEmail;
 
       this.addNotification({
         type: 'success',
@@ -1042,6 +1150,14 @@ class CRMStore {
 
     saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
     this.notify();
+
+    // Asynchronously synchronize status update with backend database
+    fetchCompanyApi('?action=update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatesForBackend),
+    }).catch((err) => console.warn('[CRM Backend] Status update sync deferred:', err));
+
     return true;
   }
 
@@ -1064,6 +1180,14 @@ class CRMStore {
     saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
     this.logAudit('DOCUMENT_UPLOAD', 'Company Registration', `Attached verified document: ${newDoc.title} (${newDoc.documentType})`, companyId, company.companyName);
     this.notify();
+
+    // Asynchronously update documents array on backend database
+    fetchCompanyApi('?action=update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: companyId, documents: company.documents, updatedAt: company.updatedAt }),
+    }).catch((err) => console.warn('[CRM Backend] Document update sync deferred:', err));
+
     return newDoc;
   }
 
@@ -1077,7 +1201,43 @@ class CRMStore {
     saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
     this.logAudit('DELETE', 'Company Registration', `Deleted company record: ${company.companyName}`, id, company.companyName);
     this.notify();
+
+    // Asynchronously commit deletion to backend database
+    fetchCompanyApi('?action=delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    }).catch((err) => console.warn('[CRM Backend] Deletion sync deferred:', err));
+
     return true;
+  }
+
+  public async clearAllCompanies(): Promise<{ success: boolean; message?: string; error?: string }> {
+    if (!this.checkPermission('canDeleteRecords') && this.currentUser?.role !== 'super_admin') {
+      return { success: false, error: 'Unauthorized: Only Super Admin can clear the Cadastre database.' };
+    }
+    try {
+      const res = await fetchCompanyApi('?action=clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'clear' }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.success) {
+        return { success: false, error: data?.error || 'Failed to clear company records from storage.' };
+      }
+      this.companies = [];
+      saveToStorage(STORAGE_KEYS.COMPANIES, []);
+      this.logAudit(
+        'DELETE',
+        'Company Registration',
+        `Super Admin ${this.currentUser?.name} (${this.currentUser?.email}) cleared all company records from the Cadastre database to prepare for fresh data entry.`
+      );
+      this.notify();
+      return { success: true, message: data.message || 'All company records cleared successfully from the backend database.' };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Network error while attempting to clear backend database.' };
+    }
   }
 
   // ─── Mining Licenses CRUD ───────────────────────────────────────────────

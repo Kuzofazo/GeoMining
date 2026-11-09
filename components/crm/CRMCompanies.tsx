@@ -27,6 +27,7 @@ import {
   Globe,
   Briefcase,
   Activity,
+  RefreshCw,
 } from 'lucide-react';
 import { crmService } from '../../lib/crmService';
 import {
@@ -86,6 +87,23 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDocUploadModal, setShowDocUploadModal] = useState(false);
   const [commentTargetCompany, setCommentTargetCompany] = useState<CompanyRecord | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [bannerSuccess, setBannerSuccess] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    const res = await crmService.syncFromBackend();
+    setIsSyncing(false);
+    if (res.success) {
+      setBannerSuccess(`Cadastre successfully synchronized with backend database (${res.count} records loaded).`);
+      setTimeout(() => setBannerSuccess(null), 5000);
+    } else {
+      setSubmitError(res.error || 'Failed to sync with backend database.');
+      setTimeout(() => setSubmitError(null), 6000);
+    }
+  };
 
   // New Company Form State — explicitly matching user requirements:
   // Company Name, Licenses Types, Date of Application, Expire Date, County/city of Operation, Company Office address, Name of Owner, Cell No., Email
@@ -172,9 +190,17 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
     return matchesSearch && matchesStatus && matchesEntity && matchesOfficer;
   });
 
-  const handleCreateCompany = (e: React.FormEvent) => {
+  const handleCreateCompany = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCompany.companyName.trim()) return;
+    setSubmitError(null);
+
+    const compName = newCompany.companyName.trim();
+    if (!compName || compName.length < 2) {
+      setSubmitError('Validation Error: Company Legal Name is required (minimum 2 characters).');
+      return;
+    }
+
+    setIsSubmitting(true);
 
     const regNum = newCompany.registrationNumber.trim() || `LBR-CORP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
     const tin = newCompany.taxIdentificationNumber.trim() || `TIN-${Math.floor(100000000 + Math.random() * 900000000)}`;
@@ -197,8 +223,8 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
         ]
       : [];
 
-    crmService.addCompany({
-      companyName: newCompany.companyName.trim(),
+    const res = await crmService.addCompany({
+      companyName: compName,
       registrationNumber: regNum,
       taxIdentificationNumber: tin,
       entityType: newCompany.entityType,
@@ -222,7 +248,17 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
       directors,
     });
 
+    setIsSubmitting(false);
+
+    if (!res.success) {
+      setSubmitError(res.error || 'Failed to commit company record to the backend database.');
+      return;
+    }
+
+    setBannerSuccess(res.message || 'Company successfully recorded and committed to the backend database.');
     setShowAddModal(false);
+    setTimeout(() => setBannerSuccess(null), 8000);
+
     // Reset Form
     setNewCompany({
       companyName: '',
@@ -320,16 +356,46 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
           </p>
         </div>
 
-        {canManage && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2a602f] hover:bg-emerald-800 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 shrink-0"
+            onClick={handleManualSync}
+            disabled={isSyncing}
+            title="Synchronize records with persistent backend database"
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all shadow-xs disabled:opacity-60 cursor-pointer"
           >
-            <Plus size={16} className="text-[#ffc30d]" />
-            <span>New Company Registration</span>
+            <RefreshCw size={14} className={`text-emerald-600 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Database'}</span>
           </button>
-        )}
+          {canManage && (
+            <button
+              onClick={() => {
+                setSubmitError(null);
+                setShowAddModal(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2a602f] hover:bg-emerald-800 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 shrink-0 cursor-pointer"
+            >
+              <Plus size={16} className="text-[#ffc30d]" />
+              <span>New Company Registration</span>
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Database Action / Sync Notification Banner */}
+      {bannerSuccess && (
+        <div className="bg-emerald-50 border-2 border-emerald-400 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3 text-xs text-emerald-900 font-semibold animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+            <span>{bannerSuccess}</span>
+          </div>
+          <button
+            onClick={() => setBannerSuccess(null)}
+            className="text-emerald-700 hover:text-emerald-950 p-1 cursor-pointer"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Executive Director / Registry Department Boss Approval Banner */}
       {canApprove && pendingApprovalCount > 0 && (
@@ -428,8 +494,9 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                   <option value="A. Cooper">A. Cooper (Registry Dept)</option>
                   <option value="R. Warner">R. Warner (Registry Dept)</option>
                   <option value="Z. Wleh">Z. Wleh (Registry Dept)</option>
+                  <option value="E. Appleton">E. Appleton (Registry Dept)</option>
                   {submittingOfficers
-                    .filter((n) => !['E. Myers', 'C. Mulbah', 'A. Cooper', 'R. Warner', 'Z. Wleh'].some((k) => n.includes(k)))
+                    .filter((n) => !['E. Myers', 'C. Mulbah', 'A. Cooper', 'R. Warner', 'Z. Wleh', 'E. Appleton'].some((k) => n.includes(k)))
                     .map((name) => (
                       <option key={name} value={name}>{name}</option>
                     ))}
@@ -520,8 +587,30 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
               {filteredCompanies.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
-                    No registered companies found matching the search criteria.
+                  <td colSpan={8} className="py-14 text-center">
+                    <div className="max-w-md mx-auto flex flex-col items-center justify-center p-4">
+                      <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200 text-[#2d5a27] flex items-center justify-center mb-3 shadow-xs">
+                        <CheckCircle2 size={28} />
+                      </div>
+                      <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider mb-1">
+                        Cadastre Database Ready &amp; Cleared
+                      </h3>
+                      <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                        All legacy company records have been cleared to prepare the system for authoritative data entry by the Registry Department. All new submissions are duplicate-checked and permanently saved to the backend database.
+                      </p>
+                      {canManage && (
+                        <button
+                          onClick={() => {
+                            setSubmitError(null);
+                            setShowAddModal(true);
+                          }}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2a602f] hover:bg-emerald-800 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-sm cursor-pointer"
+                        >
+                          <Plus size={14} className="text-[#ffc30d]" />
+                          <span>Register First Company</span>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -1162,6 +1251,19 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
 
             <form onSubmit={handleCreateCompany} className="space-y-5 text-xs">
 
+              {/* Database Error Alert */}
+              {submitError && (
+                <div className="p-3.5 bg-red-50 border-2 border-red-300 rounded-2xl flex items-start gap-2.5 text-xs text-red-800 font-semibold animate-in fade-in">
+                  <AlertCircle size={16} className="text-red-600 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block text-red-950 font-black uppercase text-[11px] tracking-wider">
+                      Submission Blocked:
+                    </strong>
+                    <span>{submitError}</span>
+                  </div>
+                </div>
+              )}
+
               {/* Officer Provenance Identity Banner */}
               <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-2xl flex items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2.5">
@@ -1477,12 +1579,20 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl font-black uppercase tracking-wider shadow-md transition-colors"
+                  disabled={isSubmitting}
+                  className="px-6 py-2.5 rounded-xl font-black uppercase tracking-wider shadow-md transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
                   style={{ backgroundColor: '#2a602f', color: '#ffc30d' }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#1e4621'; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#2a602f'; }}
                 >
-                  ✦ Register Entity
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-[#ffc30d] border-t-transparent rounded-full animate-spin" />
+                      <span>Committing to Database...</span>
+                    </>
+                  ) : (
+                    <span>✦ Register Entity</span>
+                  )}
                 </button>
               </div>
             </form>
