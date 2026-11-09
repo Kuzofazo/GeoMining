@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Building2,
   FileCheck2,
@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   CheckCircle2,
   XCircle,
+  X,
   FileText,
   Users2,
   Activity,
@@ -22,6 +23,7 @@ import {
   UserCheck,
   Shield,
   Award,
+  Search,
 } from 'lucide-react';
 import {
   BarChart,
@@ -67,7 +69,13 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
   const isRegistryOfficer = currentUser?.role === 'registry_department' && !isRegistryBoss;
   const isExecutiveDirector = currentUser?.role === 'management';
   const isSuperAdmin = currentUser?.role === 'super_admin';
+  const isAdministrator = currentUser?.role === 'administrator';
   const canTrackRegistrations = isSuperAdmin || isExecutiveDirector || isRegistryBoss;
+  // Administrative Audit Trail is strictly visible only to Super Admin, Executive Director, and Administrator
+  const canViewAuditTrail = isSuperAdmin || isExecutiveDirector || isAdministrator;
+  const [showFullAuditModal, setShowFullAuditModal] = useState<boolean>(false);
+  const [auditSearch, setAuditSearch] = useState<string>('');
+  const allAuditLogs = crmService.getAuditLogs();
 
   // Expiring licenses within 60 days or expired
   const urgentLicenses = licenses.filter(
@@ -617,60 +625,177 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
         </div>
       )}
 
-      {/* Recent Activity & Audit Trail Preview */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-slate-100 rounded-xl text-slate-700">
-              <Activity size={18} />
+      {/* Recent Activity & Audit Trail Preview - Strictly restricted to Super Admin, Executive Director, and Administrator */}
+      {canViewAuditTrail && (
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-slate-100 rounded-xl text-slate-700">
+                <Activity size={18} />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">
+                  Live Administrative Audit Trail
+                </h3>
+                <p className="text-xs text-slate-500">Security event logging and accountability records</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">
-                Live Administrative Audit Trail
-              </h3>
-              <p className="text-xs text-slate-500">Security event logging and accountability records</p>
-            </div>
+
+            <button
+              onClick={() => {
+                if (isSuperAdmin) {
+                  onSelectTab('security');
+                } else {
+                  setShowFullAuditModal(true);
+                }
+              }}
+              className="text-xs text-[#2d5a27] hover:text-emerald-800 font-bold uppercase tracking-wider underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>View Full Log</span>
+              <ArrowRight size={13} />
+            </button>
           </div>
 
-          <button
-            onClick={() => onSelectTab('security')}
-            className="text-xs text-[#2d5a27] hover:text-emerald-800 font-bold uppercase tracking-wider underline flex items-center gap-1"
-          >
-            <span>View Full Log</span>
-            <ArrowRight size={13} />
-          </button>
-        </div>
+          <div className="divide-y divide-slate-100">
+            {auditLogs.map((log) => (
+              <div key={log.id} className="py-3 sm:py-4 flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                    {log.action.substring(0, 1)}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-xs text-slate-900">{log.userName}</span>
+                      <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+                        {log.userRole.replace('_', ' ')}
+                      </span>
+                      <span className="text-[10px] font-black uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        {log.action}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-semibold">{log.module}</span>
+                    </div>
+                    <p className="text-xs text-slate-600 mt-1 leading-relaxed">{log.details}</p>
+                  </div>
+                </div>
 
-        <div className="divide-y divide-slate-100">
-          {auditLogs.map((log) => (
-            <div key={log.id} className="py-3 sm:py-4 flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
-                  {log.action.substring(0, 1)}
+                <div className="text-[11px] text-slate-400 whitespace-nowrap shrink-0 flex items-center gap-1">
+                  <Clock size={12} />
+                  <span>{log.timestamp}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Full Audit Trail Modal for Executive Director, Administrator & Super Admin */}
+      {showFullAuditModal && canViewAuditTrail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+          <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setShowFullAuditModal(false)} />
+          <div className="relative bg-white w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col animate-in fade-in zoom-in-95">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-200 flex items-center justify-between gap-4 bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-[#2a602f] text-white rounded-2xl shadow-sm">
+                  <Activity size={20} className="text-[#ffc30d]" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-xs text-slate-900">{log.userName}</span>
-                    <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
-                      {log.userRole.replace('_', ' ')}
+                    <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+                      Live Administrative Audit Trail
+                    </h2>
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#2a602f] text-[#ffc30d] text-[10px] font-black uppercase tracking-wider">
+                      {isExecutiveDirector
+                        ? 'Executive Director Oversight'
+                        : isAdministrator
+                        ? 'Administrator Oversight'
+                        : 'Super Admin Authority'}
                     </span>
-                    <span className="text-[10px] font-black uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                      {log.action}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-semibold">{log.module}</span>
                   </div>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">{log.details}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Official tamper-resistant security event logging and system accountability records
+                  </p>
                 </div>
               </div>
+              <button
+                onClick={() => setShowFullAuditModal(false)}
+                className="w-8 h-8 rounded-full bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-500 cursor-pointer transition-colors shadow-2xs shrink-0"
+              >
+                <X size={16} />
+              </button>
+            </div>
 
-              <div className="text-[11px] text-slate-400 whitespace-nowrap shrink-0 flex items-center gap-1">
-                <Clock size={12} />
-                <span>{log.timestamp}</span>
+            {/* Search filter bar */}
+            <div className="p-4 border-b border-slate-100 bg-white">
+              <div className="relative">
+                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={auditSearch}
+                  onChange={(e) => setAuditSearch(e.target.value)}
+                  placeholder="Filter audit logs by officer name, role, action, module, or details..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"
+                />
               </div>
             </div>
-          ))}
+
+            {/* Logs List */}
+            <div className="p-6 overflow-y-auto space-y-3 divide-y divide-slate-100 flex-1">
+              {allAuditLogs
+                .filter((l) => {
+                  if (!auditSearch.trim()) return true;
+                  const q = auditSearch.toLowerCase();
+                  return (
+                    l.userName?.toLowerCase().includes(q) ||
+                    l.userRole?.toLowerCase().includes(q) ||
+                    l.action?.toLowerCase().includes(q) ||
+                    l.module?.toLowerCase().includes(q) ||
+                    l.details?.toLowerCase().includes(q)
+                  );
+                })
+                .map((log) => (
+                  <div key={log.id} className="pt-3 first:pt-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                        {log.action.substring(0, 1)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-slate-900">{log.userName}</span>
+                          <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+                            {log.userRole.replace('_', ' ')}
+                          </span>
+                          <span className="text-[10px] font-black uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                            {log.action}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-semibold">{log.module}</span>
+                        </div>
+                        <p className="text-slate-600 mt-1 text-[11px] leading-relaxed">{log.details}</p>
+                      </div>
+                    </div>
+                    <div className="text-[11px] text-slate-400 whitespace-nowrap shrink-0 flex items-center gap-1 self-end sm:self-center">
+                      <Clock size={12} />
+                      <span>{log.timestamp}</span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center text-xs">
+              <span className="text-slate-500 font-medium">
+                Total Audit Records: <strong className="text-slate-800">{allAuditLogs.length}</strong>
+              </span>
+              <button
+                onClick={() => setShowFullAuditModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors cursor-pointer"
+              >
+                Close Log
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
