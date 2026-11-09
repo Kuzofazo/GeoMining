@@ -281,20 +281,7 @@ const INITIAL_SECURITY_ALERTS: SecurityAlert[] = [
   },
 ];
 
-const INITIAL_RECORD_COMMENTS: RecordComment[] = [
-  {
-    id: 'cmt-03',
-    recordId: 'lic-01',
-    recordType: 'license',
-    recordReference: 'MEL-2024-019',
-    userId: 'usr-ed-01',
-    userName: 'Carlos Etingban',
-    userRole: 'management',
-    department: 'Executive Directorate',
-    timestamp: '2026-11-08 18:45',
-    content: 'Executive observation: 21 days remaining until annual expiration. Ensure MME cadastre liaison expedites renewal dossier.',
-  },
-];
+const INITIAL_RECORD_COMMENTS: RecordComment[] = [];
 
 // ─── Backend Cadastre Persistence Client ───────────────────────────────────
 async function fetchCompanyApi(endpointOrParams: string = '', options: RequestInit = {}): Promise<Response> {
@@ -343,12 +330,16 @@ class CRMStore {
   }
 
   private init() {
-    // Statutory migration: Clean legacy cached company seed data to ensure fresh Cadastre intake
-    const CADASTRE_DATA_VERSION = 'gmec_cadastre_v4_clean_2026';
+    // Statutory migration: Clean all legacy cached records (companies, licenses, clients, notifications, comments) for fresh intake
+    const CADASTRE_DATA_VERSION = 'gmec_cadastre_v6_clean_all_records_2026';
     if (typeof localStorage !== 'undefined') {
       const storedVersion = localStorage.getItem('gmec_cadastre_version');
       if (storedVersion !== CADASTRE_DATA_VERSION) {
         localStorage.removeItem(STORAGE_KEYS.COMPANIES);
+        localStorage.removeItem(STORAGE_KEYS.LICENSES);
+        localStorage.removeItem(STORAGE_KEYS.CLIENTS);
+        localStorage.removeItem(STORAGE_KEYS.NOTIFICATIONS);
+        localStorage.removeItem(STORAGE_KEYS.RECORD_COMMENTS);
         localStorage.setItem('gmec_cadastre_version', CADASTRE_DATA_VERSION);
       }
     }
@@ -357,7 +348,10 @@ class CRMStore {
     saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
 
     this.licenses = loadFromStorage(STORAGE_KEYS.LICENSES, INITIAL_MINING_LICENSES);
+    saveToStorage(STORAGE_KEYS.LICENSES, this.licenses);
+
     this.clients = loadFromStorage(STORAGE_KEYS.CLIENTS, INITIAL_CLIENTS);
+    saveToStorage(STORAGE_KEYS.CLIENTS, this.clients);
 
     // Load users and ensure official accounts from INITIAL_CRM_USERS are synced with correct credentials
     const storedUsers = loadFromStorage<(CRMUser & { defaultPassword: string })[]>(STORAGE_KEYS.USERS, INITIAL_CRM_USERS);
@@ -1694,7 +1688,7 @@ class CRMStore {
         if (o.status === 'compliant') compliantObligations++;
       });
     });
-    const complianceRate = totalObligations > 0 ? Math.round((compliantObligations / totalObligations) * 100) : 100;
+    const complianceRate = totalObligations > 0 ? Math.round((compliantObligations / totalObligations) * 100) : 0;
 
     const countyDistribution: Record<string, number> = {};
     this.licenses.forEach((l) => {

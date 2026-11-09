@@ -268,8 +268,21 @@ export const CRMClients: React.FC<CRMClientsProps> = ({ initialSearch = '' }) =>
       </div>
 
       {/* Clients Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredClients.map((client) => {
+      {filteredClients.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3">
+            <Users2 size={24} />
+          </div>
+          <h4 className="text-sm font-black uppercase text-slate-800 tracking-tight">
+            No Client Accounts on Record
+          </h4>
+          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            Client accounts database has been cleared for fresh intake. Use "New Client Engagement" to register new client profiles.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredClients.map((client) => {
           const completedTasks = client.followUps.filter((t) => t.completed).length;
           return (
             <div
@@ -339,7 +352,8 @@ export const CRMClients: React.FC<CRMClientsProps> = ({ initialSearch = '' }) =>
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
 
       {/* ─── Client CRM Dossier Modal ────────────────────────────────────── */}
       {selectedClient && (

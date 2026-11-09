@@ -440,23 +440,33 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
           </div>
 
           <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={countyChartData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} interval={0} />
-                <YAxis tick={{ fontSize: 11, fill: '#64748b' }} allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#ffffff',
-                    borderRadius: '12px',
-                    border: '1px solid #e2e8f0',
-                    color: '#0f172a',
-                    fontSize: '12px',
-                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                  }}
-                />
-                <Bar dataKey="count" fill="#2a602f" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {countyChartData.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-slate-50/70 rounded-2xl border border-dashed border-slate-200">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#2d5a27] flex items-center justify-center mb-2">
+                  <MapPin size={20} />
+                </div>
+                <span className="text-xs font-black uppercase tracking-wider text-slate-800">No Active Concessions on Record</span>
+                <span className="text-[11px] text-slate-500 mt-1 max-w-xs">County distribution map will populate automatically when new mining licenses are registered.</span>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={countyChartData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} interval={0} />
+                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#ffffff',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      color: '#0f172a',
+                      fontSize: '12px',
+                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                    }}
+                  />
+                  <Bar dataKey="count" fill="#2a602f" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -475,34 +485,44 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
           </div>
 
           <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={categoryChartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {categoryChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#ffffff',
-                    borderRadius: '12px',
-                    border: '1px solid #e2e8f0',
-                    color: '#0f172a',
-                    fontSize: '12px',
-                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                  }}
-                />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
-              </PieChart>
-            </ResponsiveContainer>
+            {categoryChartData.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-slate-50/70 rounded-2xl border border-dashed border-slate-200">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center mb-2">
+                  <FileCheck2 size={20} />
+                </div>
+                <span className="text-xs font-black uppercase tracking-wider text-slate-800">No License Categories Active</span>
+                <span className="text-[11px] text-slate-500 mt-1 max-w-xs">Tier distribution pie chart will activate dynamically upon new license issuance.</span>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={categoryChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {categoryChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#ffffff',
+                      borderRadius: '12px',
+                      border: '1px solid #e2e8f0',
+                      color: '#0f172a',
+                      fontSize: '12px',
+                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                    }}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>
