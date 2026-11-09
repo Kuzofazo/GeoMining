@@ -118,9 +118,19 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
   });
 
   const companies = crmService.getCompanies();
+  const currentUser = crmService.getCurrentUser();
+  const isRegistryDept = currentUser?.role === 'registry_department';
+  const isAdministrator = currentUser?.role === 'administrator';
+  const isExecutiveDirector = currentUser?.role === 'management';
+  const isSuperAdmin = currentUser?.role === 'super_admin';
   const canManage = crmService.checkPermission('canManageCompanies');
   const canApprove = crmService.checkPermission('canApproveRegistrations');
   const canDelete = crmService.checkPermission('canDeleteRecords');
+  const pendingApprovalCount = companies.filter((c) => c.status === 'under_review' || c.status === 'pending').length;
+
+  const handleQuickApprove = (company: CompanyRecord) => {
+    crmService.updateCompanyStatus(company.id, 'approved');
+  };
 
   // Filtering
   const filteredCompanies = companies.filter((c) => {
@@ -301,6 +311,55 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
         )}
       </div>
 
+      {/* Administrator / Executive Director Approval Banner */}
+      {canApprove && pendingApprovalCount > 0 && (
+        <div className="bg-gradient-to-r from-amber-50 via-white to-emerald-50 border-2 border-amber-300 rounded-3xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="p-2.5 bg-amber-500 text-white rounded-2xl shadow-sm shrink-0">
+              <Building2 size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-black uppercase tracking-wider text-amber-950">
+                  {pendingApprovalCount} Company Registration{pendingApprovalCount > 1 ? 's' : ''} Awaiting Approval
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-black uppercase">
+                  {isExecutiveDirector ? 'Executive Director' : isAdministrator ? 'Administrator' : 'Super Admin'} Authorization
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-0.5 font-medium">
+                Companies registered by the Registry Department require official authorization from either the <strong>Administrator (Z. Teewu)</strong> or <strong>Executive Director (Carlos Etingban)</strong>.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setStatusFilter(statusFilter === 'under_review' ? 'all' : 'under_review')}
+            className="px-4 py-2 rounded-xl bg-[#2a602f] hover:bg-[#1e4621] text-[#ffc30d] font-black text-xs uppercase tracking-wider shrink-0 transition-colors cursor-pointer shadow-sm"
+          >
+            {statusFilter === 'under_review' ? 'Show All Companies' : `Filter Pending (${pendingApprovalCount})`}
+          </button>
+        </div>
+      )}
+
+      {/* Registry Department Intake Informational Notice */}
+      {isRegistryDept && (
+        <div className="bg-emerald-50/70 border border-emerald-200 rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-[#2a602f] text-white rounded-2xl shrink-0">
+              <FileText size={18} />
+            </div>
+            <div>
+              <span className="text-xs font-black uppercase tracking-wider text-[#2a602f]">
+                Registry Department Corporate Intake
+              </span>
+              <p className="text-xs text-slate-600 mt-0.5 font-medium">
+                New company intake records are placed <strong>Under Review</strong> and routed to either the <strong>Administrator (Z. Teewu)</strong> or <strong>Executive Director (Carlos Etingban)</strong> for statutory authorization.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Filter and Search Bar */}
       <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         <div className="relative flex-1">
@@ -434,9 +493,55 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                           <span className="truncate">{email}</span>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4">{getStatusBadge(comp.status)}</td>
+                      <td className="py-3.5 px-4">
+                        {comp.status === 'under_review' || comp.status === 'pending' ? (
+                          <div>
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
+                              <Clock size={10} className="text-amber-700" />
+                              <span>Pending Approval</span>
+                            </span>
+                            <div className="text-[9px] text-amber-900 font-bold mt-0.5">
+                              Admin / Exec Dir Review
+                            </div>
+                            {comp.registeredByName && (
+                              <div className="text-[9px] text-slate-400 truncate max-w-[120px]" title={comp.registeredByName}>
+                                By {comp.registeredByName.split('(')[0].trim()}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div>
+                            {getStatusBadge(comp.status)}
+                            {comp.approvedBy && (
+                              <div
+                                className="text-[9px] text-emerald-800 font-extrabold mt-0.5 flex items-center gap-0.5 truncate max-w-[130px]"
+                                title={`Authorized by ${comp.approvedBy} on ${comp.approvedAt || ''}`}
+                              >
+                                <CheckCircle2 size={10} className="text-[#2a602f] shrink-0" />
+                                <span className="truncate">{comp.approvedBy.split('(')[0].trim()}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {canApprove && (comp.status === 'under_review' || comp.status === 'pending') && (
+                            <button
+                              onClick={() => handleQuickApprove(comp)}
+                              className="px-2.5 py-1.5 rounded-xl bg-[#2a602f] hover:bg-[#1e4621] text-[#ffc30d] font-black text-xs transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+                              title={
+                                isExecutiveDirector
+                                  ? 'Approve as Executive Director'
+                                  : isAdministrator
+                                  ? 'Approve as Administrator'
+                                  : 'Approve as Super Admin'
+                              }
+                            >
+                              <CheckCircle2 size={13} />
+                              <span>Approve</span>
+                            </button>
+                          )}
                           <button
                             onClick={() => setCommentTargetCompany(comp)}
                             className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-[#2a602f] text-slate-700 font-bold text-xs transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
@@ -525,13 +630,31 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
               </div>
 
               {canApprove && (
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-xs font-bold text-slate-600 mr-1">Super Admin Actions:</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-700 mr-1 flex items-center gap-1">
+                    <Shield size={13} className="text-[#2a602f]" />
+                    <span>
+                      {isExecutiveDirector
+                        ? 'Executive Director Authority:'
+                        : isAdministrator
+                        ? 'Administrator Authority:'
+                        : 'Super Admin Authority:'}
+                    </span>
+                  </span>
+                  {(selectedCompany.status === 'under_review' || selectedCompany.status === 'pending') && (
+                    <button
+                      onClick={() => handleStatusChange('approved')}
+                      className="px-3.5 py-1.5 rounded-xl bg-[#2a602f] hover:bg-[#1e4621] text-[#ffc30d] text-xs font-black uppercase tracking-wider flex items-center gap-1 shadow-md cursor-pointer transition-all"
+                    >
+                      <CheckCircle2 size={13} />
+                      <span>Approve Registration</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => handleStatusChange('active')}
                     className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold cursor-pointer"
                   >
-                    Mark Active / Approved
+                    Mark Active
                   </button>
                   <button
                     onClick={() => handleStatusChange('under_review')}
@@ -554,20 +677,66 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                 </div>
               )}
 
-              {!canApprove && crmService.getCurrentUser()?.role === 'registry_department' && (
+              {isRegistryDept && (
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleStatusChange('under_review')}
-                    className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-sm cursor-pointer"
-                  >
-                    Submit for Super Admin Review &amp; Approval
-                  </button>
+                  <div className="text-[11px] text-amber-800 font-semibold flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
+                    <Clock size={13} className="text-amber-700" />
+                    <span>Awaiting authorization by either the Administrator (Z. Teewu) or Executive Director (Carlos Etingban)</span>
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Corporate Profile Details — full field set per user requirements */}
             <div className="mt-6 space-y-3">
+              {/* Approval status banner */}
+              {selectedCompany.approvedBy ? (
+                <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-300 flex items-center justify-between gap-3 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-600 text-white rounded-xl shadow-sm">
+                      <CheckCircle2 size={18} />
+                    </div>
+                    <div>
+                      <div className="text-xs font-black text-[#2a602f] uppercase tracking-wider">
+                        Official Statutory Approval Granted
+                      </div>
+                      <div className="text-xs text-slate-700 font-medium mt-0.5">
+                        Authorized &amp; Approved by <strong className="text-slate-900">{selectedCompany.approvedBy}</strong>
+                        {selectedCompany.approvedAt && ` on ${selectedCompany.approvedAt}`}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-[#ffc30d] text-slate-950 font-black text-[10px] uppercase tracking-wider shadow-sm">
+                    Cadastre Verified
+                  </span>
+                </div>
+              ) : (selectedCompany.status === 'under_review' || selectedCompany.status === 'pending') && (
+                <div className="bg-amber-50 p-4 rounded-2xl border border-amber-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-500 text-white rounded-xl shadow-sm shrink-0">
+                      <Clock size={18} />
+                    </div>
+                    <div>
+                      <div className="text-xs font-black text-amber-950 uppercase tracking-wider">
+                        Awaiting Administrator or Executive Director Authorization
+                      </div>
+                      <div className="text-xs text-amber-900 font-medium mt-0.5">
+                        {selectedCompany.registeredByName ? `Submitted by ${selectedCompany.registeredByName}. ` : ''}
+                        Corporate registration records added by the Registry Department must be authorized by either the <strong>Administrator (Z. Teewu)</strong> or <strong>Executive Director (Carlos Etingban)</strong>.
+                      </div>
+                    </div>
+                  </div>
+                  {canApprove && (
+                    <button
+                      onClick={() => handleStatusChange('approved')}
+                      className="px-4 py-2 rounded-xl bg-[#2a602f] hover:bg-[#1e4621] text-[#ffc30d] font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md cursor-pointer shrink-0 transition-all hover:scale-102"
+                    >
+                      <CheckCircle2 size={15} />
+                      <span>Approve Registration</span>
+                    </button>
+                  )}
+                </div>
+              )}
               {/* Row 1: License Type + Entity */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-200">
@@ -895,18 +1064,32 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                   </div>
                   <div>
                     <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
-                      Status
+                      Status / Workflow
                     </label>
-                    <select
-                      value={newCompany.status}
-                      onChange={(e) => setNewCompany({ ...newCompany, status: e.target.value as RegistrationStatus })}
-                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2a602f]/30 focus:border-[#2a602f]"
-                    >
-                      <option value="under_review">Under Review</option>
-                      <option value="pending">Pending</option>
-                      <option value="active">Active</option>
-                      <option value="approved">Approved</option>
-                    </select>
+                    {isRegistryDept ? (
+                      <div className="w-full p-2 bg-amber-50 border border-amber-300 rounded-xl font-bold text-amber-950 text-xs flex flex-col justify-center">
+                        <div className="flex items-center justify-between">
+                          <span>Under Review</span>
+                          <span className="text-[9px] font-black bg-amber-200 text-amber-900 px-1.5 py-0.5 rounded uppercase">
+                            Approval Required
+                          </span>
+                        </div>
+                        <span className="text-[9px] font-medium text-amber-800 mt-0.5">
+                          Requires Admin or Exec Dir approval
+                        </span>
+                      </div>
+                    ) : (
+                      <select
+                        value={newCompany.status}
+                        onChange={(e) => setNewCompany({ ...newCompany, status: e.target.value as RegistrationStatus })}
+                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2a602f]/30 focus:border-[#2a602f]"
+                      >
+                        <option value="under_review">Under Review</option>
+                        <option value="pending">Pending</option>
+                        <option value="active">Active</option>
+                        <option value="approved">Approved</option>
+                      </select>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1042,6 +1225,21 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                   </div>
                 </div>
               </div>
+
+              {/* ── Statutory Routing Notice for Registry Department ── */}
+              {isRegistryDept && (
+                <div className="p-3.5 bg-amber-50 border border-amber-300 rounded-2xl flex items-start gap-3">
+                  <div className="p-1.5 bg-amber-500 text-white rounded-lg shrink-0 mt-0.5">
+                    <Clock size={14} />
+                  </div>
+                  <div className="text-xs text-amber-950">
+                    <span className="font-black uppercase tracking-wider block">Statutory Executive Approval Required</span>
+                    <span className="text-amber-900 mt-0.5 block">
+                      This company record will be submitted <strong>Under Review</strong>. Official cadastre approval must be authorized by either the <strong>Administrator (Z. Teewu)</strong> or the <strong>Executive Director (Carlos Etingban)</strong> before becoming active.
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* ── Action Buttons ── */}
               <div className="pt-2 flex justify-end gap-3 border-t border-slate-100">

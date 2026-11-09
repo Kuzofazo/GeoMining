@@ -152,6 +152,11 @@ export const INITIAL_COMPANIES: CompanyRecord[] = [
     annualRenewalDate: '2027-03-15',
     status: 'active',
     assignedOfficer: 'Helena K. Flomo',
+    registeredByRole: 'registry_department',
+    registeredByName: 'E. Myers (Registry Department)',
+    approvedBy: 'Carlos Etingban (Executive Director)',
+    approvedAt: '2024-03-20',
+    approvedByRole: 'management',
     directors: [
       {
         id: 'dir-01',
@@ -232,6 +237,11 @@ export const INITIAL_COMPANIES: CompanyRecord[] = [
     annualRenewalDate: '2027-01-20',
     status: 'active',
     assignedOfficer: 'Carlos E. Tingban',
+    registeredByRole: 'registry_department',
+    registeredByName: 'C. Mulbah (Registry Department)',
+    approvedBy: 'Z. Teewu (Administrator)',
+    approvedAt: '2025-01-25',
+    approvedByRole: 'administrator',
     directors: [
       {
         id: 'dir-03',
@@ -302,6 +312,11 @@ export const INITIAL_COMPANIES: CompanyRecord[] = [
     annualRenewalDate: '2026-11-25', // Expiring in under 30 days!
     status: 'active',
     assignedOfficer: 'Helena K. Flomo',
+    registeredByRole: 'registry_department',
+    registeredByName: 'E. Myers (Registry Department)',
+    approvedBy: 'Carlos Etingban (Executive Director)',
+    approvedAt: '2024-03-20',
+    approvedByRole: 'management',
     directors: [
       {
         id: 'dir-05',
@@ -352,6 +367,8 @@ export const INITIAL_COMPANIES: CompanyRecord[] = [
     annualRenewalDate: '2027-04-05',
     status: 'under_review',
     assignedOfficer: 'Helena K. Flomo',
+    registeredByRole: 'registry_department',
+    registeredByName: 'E. Myers (Registry Department)',
     directors: [
       {
         id: 'dir-06',

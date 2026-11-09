@@ -56,6 +56,9 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
   const canExport = crmService.checkPermission('canExportData');
   const failedLogins = crmService.getFailedLoginAttempts();
   const securityAlerts = crmService.getSecurityAlerts().filter((a) => !a.acknowledged);
+  const companies = crmService.getCompanies();
+  const pendingApprovals = companies.filter((c) => c.status === 'under_review' || c.status === 'pending');
+  const canApprove = crmService.checkPermission('canApproveRegistrations');
 
   // Expiring licenses within 60 days or expired
   const urgentLicenses = licenses.filter(
@@ -103,6 +106,59 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
             </div>
           </div>
           <ArrowRight size={18} className="text-red-700 shrink-0" />
+        </div>
+      )}
+
+      {/* Executive / Administrator Approval Notification Banner */}
+      {canApprove && pendingApprovals.length > 0 && (
+        <div
+          onClick={() => onSelectTab('companies')}
+          className="bg-amber-50/90 border-2 border-amber-300 rounded-3xl p-4 sm:p-5 shadow-sm flex items-center justify-between gap-4 cursor-pointer hover:bg-amber-100/70 transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-amber-500 text-white shrink-0 shadow-sm">
+              <Building2 size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-black uppercase tracking-wider text-amber-950">
+                  Action Required — {pendingApprovals.length} Company Registration{pendingApprovals.length > 1 ? 's' : ''} Awaiting Approval
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-black uppercase">
+                  {currentUser?.role === 'management' ? 'Executive Director' : currentUser?.role === 'administrator' ? 'Administrator' : 'Super Admin'} Authorization
+                </span>
+              </div>
+              <p className="text-xs text-amber-800 mt-0.5 font-medium">
+                Companies registered by the Registry Department require official statutory authorization from either the Administrator (Z. Teewu) or Executive Director (Carlos Etingban). Click here to review and approve.
+              </p>
+            </div>
+          </div>
+          <ArrowRight size={18} className="text-amber-800 shrink-0" />
+        </div>
+      )}
+
+      {/* Registry Department Workflow Notice */}
+      {currentUser?.role === 'registry_department' && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-4 sm:p-5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-[#2a602f] text-white shrink-0">
+              <FileText size={18} />
+            </div>
+            <div>
+              <span className="text-xs font-black uppercase tracking-wider text-[#2a602f]">
+                Registry Department Workflow Notice
+              </span>
+              <p className="text-xs text-slate-600 mt-0.5 font-medium">
+                New company intake records are submitted under review for authorization by either the Administrator or Executive Director.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => onSelectTab('companies')}
+            className="px-3.5 py-1.5 rounded-xl bg-[#2a602f] text-[#ffc30d] text-xs font-bold uppercase tracking-wider shrink-0"
+          >
+            Open Registry
+          </button>
         </div>
       )}
 

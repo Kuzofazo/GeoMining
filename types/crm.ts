@@ -93,6 +93,11 @@ export interface CompanyRecord {
   directors: CompanyDirector[];
   documents: CompanyDocument[];
   assignedOfficer: string;
+  registeredByRole?: UserRole;
+  registeredByName?: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  approvedByRole?: UserRole;
   notes?: string;
   createdAt: string;
   updatedAt: string;

@@ -106,7 +106,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
   },
   administrator: {
     canManageCompanies: false,
-    canApproveRegistrations: false,
+    canApproveRegistrations: true, // Administrator has authority to approve companies registered by Registry Dept
     canManageLicenses: false,
     canApproveCompliance: false,
     canManageClients: false,
@@ -124,7 +124,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
   },
   management: {
     canManageCompanies: false,
-    canApproveRegistrations: false,
+    canApproveRegistrations: true, // Executive Director has authority to approve companies registered by Registry Dept
     canManageLicenses: false,
     canApproveCompliance: false,
     canManageClients: false,
@@ -359,6 +359,11 @@ class CRMStore {
         ownerName: c.ownerName || (c.directors && c.directors[0]?.name) || init?.ownerName || 'Principal Owner',
         cellNo: c.cellNo || c.primaryPhone || init?.cellNo || '+231 77 000 0000',
         primaryPhone: c.primaryPhone || c.cellNo || init?.primaryPhone || '+231 77 000 0000',
+        registeredByRole: c.registeredByRole || init?.registeredByRole,
+        registeredByName: c.registeredByName || init?.registeredByName,
+        approvedBy: c.approvedBy || init?.approvedBy,
+        approvedAt: c.approvedAt || init?.approvedAt,
+        approvedByRole: c.approvedByRole || init?.approvedByRole,
       };
     });
     saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
@@ -901,16 +906,46 @@ class CRMStore {
       return null;
     }
 
+    const isRegistry = this.currentUser?.role === 'registry_department';
     const newCompany: CompanyRecord = {
       ...data,
       id: `comp-${Date.now()}`,
+      // When added by Registry Department, it MUST default to 'under_review' awaiting approval from Administrator or Executive Director
+      status: isRegistry ? 'under_review' : data.status,
+      registeredByRole: this.currentUser?.role,
+      registeredByName: this.currentUser?.name,
       documents: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
     this.companies = [newCompany, ...this.companies];
     saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
-    this.logAudit('CREATE', 'Company Registration', `Created new company entity: ${newCompany.companyName} (${newCompany.registrationNumber})`, newCompany.id, newCompany.companyName);
+
+    if (isRegistry) {
+      this.addNotification({
+        type: 'warning',
+        title: 'New Company Pending Approval',
+        message: `"${newCompany.companyName}" was submitted by ${this.currentUser?.name || 'Registry Department'}. Awaiting statutory authorization by the Administrator (Z. Teewu) or Executive Director (Carlos Etingban).`,
+        relatedModule: 'Company Registration',
+        relatedId: newCompany.id,
+      });
+      this.logAudit(
+        'CREATE',
+        'Company Registration',
+        `Registry Department (${this.currentUser?.name}) registered entity: ${newCompany.companyName} (${newCompany.registrationNumber}). Awaiting Administrator or Executive Director approval.`,
+        newCompany.id,
+        newCompany.companyName
+      );
+    } else {
+      this.logAudit(
+        'CREATE',
+        'Company Registration',
+        `Created new company entity: ${newCompany.companyName} (${newCompany.registrationNumber})`,
+        newCompany.id,
+        newCompany.companyName
+      );
+    }
+
     this.notify();
     return newCompany;
   }
@@ -948,8 +983,42 @@ class CRMStore {
     const oldStatus = company.status;
     company.status = status;
     company.updatedAt = new Date().toISOString();
+
+    if (status === 'approved' || status === 'active') {
+      const roleTitle = this.currentUser?.role === 'administrator'
+        ? 'Administrator'
+        : this.currentUser?.role === 'management'
+        ? 'Executive Director'
+        : 'Super Admin';
+      company.approvedBy = `${this.currentUser?.name || 'Authorized Official'} (${roleTitle})`;
+      company.approvedAt = new Date().toISOString().substring(0, 10);
+      company.approvedByRole = this.currentUser?.role;
+
+      this.addNotification({
+        type: 'success',
+        title: 'Company Registration Approved',
+        message: `"${company.companyName}" has been officially authorized and approved by ${company.approvedBy}.`,
+        relatedModule: 'Company Registration',
+        relatedId: company.id,
+      });
+      this.logAudit(
+        'STATUS_CHANGE',
+        'Company Registration',
+        `Company "${company.companyName}" authorized and approved by ${company.approvedBy}`,
+        id,
+        company.companyName
+      );
+    } else {
+      this.logAudit(
+        'STATUS_CHANGE',
+        'Company Registration',
+        `Status transitioned from ${oldStatus.toUpperCase()} to ${status.toUpperCase()} for ${company.companyName}`,
+        id,
+        company.companyName
+      );
+    }
+
     saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
-    this.logAudit('STATUS_CHANGE', 'Company Registration', `Status transitioned from ${oldStatus.toUpperCase()} to ${status.toUpperCase()} for ${company.companyName}`, id, company.companyName);
     this.notify();
     return true;
   }
@@ -1270,6 +1339,19 @@ class CRMStore {
     return [...this.auditLogs];
   }
 
+  public addNotification(notification: Omit<SystemNotification, 'id' | 'timestamp' | 'read'>): SystemNotification {
+    const newNotif: SystemNotification = {
+      ...notification,
+      id: `notif-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      timestamp: 'Just now',
+      read: false,
+    };
+    this.notifications = [newNotif, ...this.notifications];
+    saveToStorage(STORAGE_KEYS.NOTIFICATIONS, this.notifications);
+    this.notify();
+    return newNotif;
+  }
+
   public getNotifications(): SystemNotification[] {
     return [...this.notifications];
   }
@@ -1485,6 +1567,8 @@ class CRMStore {
         'Email',
         'Entity Type',
         'Status',
+        'Registered By',
+        'Approved By',
         'Officer',
       ];
       const rows = this.companies.map((c) => [
@@ -1502,6 +1586,8 @@ class CRMStore {
         `"${c.primaryEmail || ''}"`,
         `"${c.entityType}"`,
         `"${c.status.toUpperCase()}"`,
+        `"${c.registeredByName || 'Registry Department'}"`,
+        `"${c.approvedBy || (c.status === 'under_review' ? 'Pending Approval' : 'Verified')}"`,
         `"${c.assignedOfficer}"`,
       ]);
       csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
