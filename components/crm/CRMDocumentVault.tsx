@@ -413,3 +413,4 @@ export const CRMDocumentVault: React.FC<CRMDocumentVaultProps> = ({ initialSearc
     </div>
   );
 };
+

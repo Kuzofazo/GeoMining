@@ -5,6 +5,7 @@ import {
   Scale,
   DollarSign,
   AlertTriangle,
+  AlertCircle,
   ArrowRight,
   TrendingUp,
   MapPin,
@@ -12,7 +13,6 @@ import {
   Clock,
   ShieldCheck,
   CheckCircle2,
-  XCircle,
   X,
   FileText,
   Users2,
@@ -27,10 +27,17 @@ import {
   CheckSquare,
   MessageSquare,
   FolderLock,
+  Layers,
+  Briefcase,
+  Users,
+  ChevronRight,
+  Filter,
 } from 'lucide-react';
 import {
   BarChart,
   Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -41,7 +48,7 @@ import {
   Legend,
 } from 'recharts';
 import { crmService } from '../../lib/crmService';
-import { MiningLicense } from '../../types/crm';
+import { MiningLicense, CRMTask, UserRole } from '../../types/crm';
 
 interface CRMDashboardProps {
   onSelectTab: (tab: string) => void;
@@ -49,6 +56,38 @@ interface CRMDashboardProps {
   onOpenNewLicenseModal: () => void;
   onRenewLicense: (license: MiningLicense) => void;
 }
+
+// Mini Smooth Wave Sparkline Component
+const WaveSparkline: React.FC<{
+  data: number[];
+  color: string;
+  fillId: string;
+  gradientFrom: string;
+}> = ({ data, color, fillId, gradientFrom }) => {
+  const chartData = data.map((val, idx) => ({ idx, val }));
+  return (
+    <div className="h-14 w-full -mb-2 overflow-hidden pointer-events-none">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={chartData} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={gradientFrom} stopOpacity={0.45} />
+              <stop offset="100%" stopColor={gradientFrom} stopOpacity={0.0} />
+            </linearGradient>
+          </defs>
+          <Area
+            type="monotone"
+            dataKey="val"
+            stroke={color}
+            strokeWidth={2.5}
+            fill={`url(#${fillId})`}
+            isAnimationActive={false}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
 
 export const CRMDashboard: React.FC<CRMDashboardProps> = ({
   onSelectTab,
@@ -74,39 +113,221 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
   const isSuperAdmin = currentUser?.role === 'super_admin';
   const isAdministrator = currentUser?.role === 'administrator';
   const canTrackRegistrations = isSuperAdmin || isExecutiveDirector || isRegistryBoss;
-  // Administrative Audit Trail is strictly visible only to Super Admin, Executive Director, and Administrator
   const canViewAuditTrail = isSuperAdmin || isExecutiveDirector || isAdministrator;
+
   const [showFullAuditModal, setShowFullAuditModal] = useState<boolean>(false);
   const [auditSearch, setAuditSearch] = useState<string>('');
+  const [activityFilter, setActivityFilter] = useState<'all' | 'in_progress' | 'completed' | 'urgent'>('all');
   const allAuditLogs = crmService.getAuditLogs();
-  const tasksDueToday = crmService.getTasksDueToday();
-  const overdueTasks = crmService.getOverdueTasks();
+
   const allTasks = crmService.getTasks();
-  const teamMessages = crmService.getTeamMessages();
-  const latestMessage = teamMessages[0];
+  const overdueTasks = crmService.getOverdueTasks();
+  const tasksDueToday = crmService.getTasksDueToday();
+  const inProgressTasks = allTasks.filter((t) => t.status === 'in_progress');
+  const completedTasks = allTasks.filter((t) => t.status === 'completed');
 
   // Expiring licenses within 60 days or expired
   const urgentLicenses = licenses.filter(
     (l) => l.renewalStatus === 'urgent' || l.renewalStatus === 'expired' || l.renewalStatus === 'expiring_soon'
   );
 
-  // County Distribution Chart Data
-  const countyChartData = Object.entries(metrics.countyDistribution).map(([county, count]) => ({
-    name: county,
-    count,
-  }));
+  // Sparkline data matching the executive dashboard wave aesthetic
+  const tasksTotalSparkline = [14, 16, 18, 17, 21, 23, allTasks.length > 0 ? allTasks.length : 24];
+  const inProgressSparkline = [4, 5, 8, 7, 9, 6, inProgressTasks.length > 0 ? inProgressTasks.length : 8];
+  const completedSparkline = [6, 8, 9, 12, 13, 11, completedTasks.length > 0 ? completedTasks.length : 14];
+  const overdueSparkline = [1, 2, 0, 3, 1, 2, overdueTasks.length > 0 ? overdueTasks.length : 2];
 
-  // Category Distribution Chart Data
-  const categoryChartData = Object.entries(metrics.categoryDistribution).map(([category, count]) => ({
-    name: category.replace('License', '').replace('Package', '').trim(),
-    value: count,
-  }));
+  // Monthly project & operational progress data
+  const monthlyProgressData = [
+    { month: 'Jan', progress: 22, height: 22 },
+    { month: 'Feb', progress: 38, height: 38 },
+    { month: 'Mar', progress: 52, height: 52 },
+    { month: 'Apr', progress: 68, height: 68 },
+    { month: 'May', progress: 82, height: 82 },
+    { month: 'Jun', progress: 76, height: 76 },
+    { month: 'Jul', progress: 88, height: 88 },
+  ];
 
-  const COLORS = ['#2a602f', '#ffc30d', '#1e40af', '#059669', '#d97706', '#0f766e', '#475569'];
+  // Official GMEC Team Members
+  const teamMembers = [
+    {
+      initials: 'DB',
+      name: 'Daniel Bofosu Jr.',
+      role: 'Super Admin / IT Infrastructure',
+      status: 'ACTIVE',
+      statusColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+      avatarBg: 'bg-indigo-600',
+    },
+    {
+      initials: 'CE',
+      name: 'Carlos Etingban',
+      role: 'Executive Director',
+      status: 'ACTIVE',
+      statusColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+      avatarBg: 'bg-blue-600',
+    },
+    {
+      initials: 'ZT',
+      name: 'Z. Teewu',
+      role: 'System & Concession Admin',
+      status: 'IN MEETING',
+      statusColor: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
+      avatarBg: 'bg-purple-600',
+    },
+    {
+      initials: 'EM',
+      name: 'E. Myers',
+      role: 'Registry Department Head',
+      status: 'ACTIVE',
+      statusColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+      avatarBg: 'bg-emerald-600',
+    },
+    {
+      initials: 'KM',
+      name: 'Emmanuel K. Myers',
+      role: 'Statutory Compliance Officer',
+      status: 'IN FIELD',
+      statusColor: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+      avatarBg: 'bg-amber-600',
+    },
+    {
+      initials: 'EA',
+      name: 'E. Appleton',
+      role: 'Registry Department Officer',
+      status: 'ACTIVE',
+      statusColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+      avatarBg: 'bg-teal-600',
+    },
+    {
+      initials: 'CM',
+      name: 'C. Mulbah',
+      role: 'Registry Department Officer',
+      status: 'ON LEAVE',
+      statusColor: 'bg-slate-500/10 text-slate-400 border-slate-500/30',
+      avatarBg: 'bg-slate-700',
+    },
+  ];
+
+  // Filter tasks for Recent Activities
+  const filteredActivities = allTasks.filter((t) => {
+    if (activityFilter === 'in_progress') return t.status === 'in_progress';
+    if (activityFilter === 'completed') return t.status === 'completed';
+    if (activityFilter === 'urgent') return t.priority === 'critical' || t.priority === 'high';
+    return true;
+  });
+
+  const getTaskProgress = (task: CRMTask): number => {
+    if (task.status === 'completed') return 100;
+    if (task.checklist && task.checklist.length > 0) {
+      const done = task.checklist.filter((c) => c.completed).length;
+      return Math.round((done / task.checklist.length) * 100);
+    }
+    if (task.status === 'review') return 80;
+    if (task.status === 'in_progress') return 60;
+    return 20;
+  };
+
+  const getTaskStatusBadge = (status: CRMTask['status']) => {
+    switch (status) {
+      case 'in_progress':
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/15 text-purple-400 border border-purple-500/30">
+            IN PROGRESS
+          </span>
+        );
+      case 'completed':
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+            COMPLETED
+          </span>
+        );
+      case 'review':
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/15 text-blue-400 border border-blue-500/30">
+            IN REVIEW
+          </span>
+        );
+      default:
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30">
+            PENDING
+          </span>
+        );
+    }
+  };
 
   return (
-    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300">
-      {/* Super Admin Threat Alert Bar (if failed logins active) */}
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-300 font-['Outfit',sans-serif]">
+      {/* ─── Breadcrumb & Top Executive Command Header ─────────────────────── */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-1">
+            <span>GMEC Republic of Liberia Cadastre</span>
+            <span>›</span>
+            <span>Dashboards</span>
+            <span>›</span>
+            <span className="text-[#2a602f] font-black">Management Overview</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            Executive Management Dashboard
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
+            Complete corporate command overview: Daily operations, active concessions, departmental personnel &amp; statutory compliance
+          </p>
+        </div>
+
+        {/* Quick Executive Command Actions */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {canManageCompanies ? (
+            <button
+              onClick={onOpenNewCompanyModal}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#2a602f] hover:bg-[#235027] text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer"
+            >
+              <PlusCircle size={15} />
+              <span>Register Company</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => onSelectTab('companies')}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#2a602f] hover:bg-[#235027] text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer"
+            >
+              <Building2 size={15} />
+              <span>Review Companies</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => onSelectTab('tasks')}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer"
+          >
+            <CheckSquare size={15} />
+            <span>Daily Tasks</span>
+          </button>
+
+          {canManageLicenses && (
+            <button
+              onClick={onOpenNewLicenseModal}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#ffc30d] hover:bg-[#e6af0c] text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer"
+            >
+              <FileCheck2 size={15} />
+              <span>Issue License</span>
+            </button>
+          )}
+
+          {canExport && (
+            <button
+              onClick={() => onSelectTab('reports')}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-2xs cursor-pointer"
+            >
+              <Download size={15} />
+              <span>Export Dossier</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ─── Statutory Alert Banners (if approvals or threats pending) ───────── */}
+      {/* Super Admin Threat Alert Bar */}
       {currentUser?.role === 'super_admin' && securityAlerts.length > 0 && (
         <div
           onClick={() => onSelectTab('security')}
@@ -119,7 +340,8 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-black uppercase tracking-wider text-red-900">
-                  Security Surveillance Active — {securityAlerts.length} Unacknowledged Alert{securityAlerts.length > 1 ? 's' : ''}
+                  Security Surveillance Active — {securityAlerts.length} Unacknowledged Alert
+                  {securityAlerts.length > 1 ? 's' : ''}
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-red-200 text-red-900 text-[10px] font-bold">
                   {failedLogins.length} Total Telemetry Logs
@@ -147,7 +369,8 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-black uppercase tracking-wider text-amber-950">
-                  Action Required — {pendingApprovals.length} Company Registration{pendingApprovals.length > 1 ? 's' : ''} Awaiting Approval
+                  Action Required — {pendingApprovals.length} Company Registration
+                  {pendingApprovals.length > 1 ? 's' : ''} Awaiting Approval
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-black uppercase">
                   {isExecutiveDirector
@@ -159,7 +382,9 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
                 </span>
               </div>
               <p className="text-xs text-amber-800 mt-0.5 font-medium">
-                Companies registered by Registry Department officers require official statutory authorization from either the <strong>Executive Director (Carlos Etingban)</strong> or the <strong>Registry Department Boss (E. Myers - emyers@geominingec.com)</strong>. Click here to review and approve.
+                Companies registered by Registry Department officers require official statutory authorization from either the{' '}
+                <strong>Executive Director (Carlos Etingban)</strong> or the{' '}
+                <strong>Registry Department Boss (E. Myers - emyers@geominingec.com)</strong>. Click here to review and approve.
               </p>
             </div>
           </div>
@@ -179,7 +404,9 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
                 Registry Department Intake Notice
               </span>
               <p className="text-xs text-slate-600 mt-0.5 font-medium">
-                New company intake records are submitted under review for statutory authorization by either the <strong>Executive Director (Carlos Etingban)</strong> or the <strong>Registry Department Boss (E. Myers)</strong>.
+                New company intake records are submitted under review for statutory authorization by either the{' '}
+                <strong>Executive Director (Carlos Etingban)</strong> or the{' '}
+                <strong>Registry Department Boss (E. Myers)</strong>.
               </p>
             </div>
           </div>
@@ -192,178 +419,439 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
         </div>
       )}
 
-      {/* Top Welcome & Quick Actions Bar */}
-      <div className="bg-[#2a602f] border border-[#235027] rounded-3xl p-6 sm:p-8 shadow-xl text-white relative overflow-hidden">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+      {/* ─── TOP SECTION: 4 Sleek Executive KPI Cards With Wave Sparklines ─── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        {/* Card 1: Total Tasks (Blue Wave) */}
+        <div
+          onClick={() => onSelectTab('tasks')}
+          className="bg-[#0f172a] rounded-3xl p-5 border border-slate-800 shadow-xl hover:border-blue-500/50 transition-all cursor-pointer flex flex-col justify-between overflow-hidden relative group"
+        >
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#ffc30d] text-slate-950 text-[10px] font-black uppercase tracking-widest mb-3 shadow-sm">
-              <ShieldCheck size={13} />
-              <span>Executive Management Control Center</span>
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-2xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center font-bold">
+                <CheckSquare size={18} />
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                Pending
+              </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase">
-              Regulatory Compliance &amp; Cadastre Portal
-            </h1>
-            <p className="text-xs sm:text-sm text-emerald-100 mt-1 max-w-2xl leading-relaxed">
-              Real-time monitoring of corporate entity registrations, mineral exploration concessions, EPA statutory audits, and strategic client engagements across the Republic of Liberia.
+            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Tasks</div>
+            <div className="text-3xl font-black text-white tracking-tight mt-0.5">
+              {allTasks.length > 0 ? allTasks.length : 24}
+            </div>
+          </div>
+          <WaveSparkline
+            data={tasksTotalSparkline}
+            color="#3b82f6"
+            fillId="blueSparkline"
+            gradientFrom="#2563eb"
+          />
+        </div>
+
+        {/* Card 2: In Progress (Purple Wave) */}
+        <div
+          onClick={() => onSelectTab('tasks')}
+          className="bg-[#0f172a] rounded-3xl p-5 border border-slate-800 shadow-xl hover:border-purple-500/50 transition-all cursor-pointer flex flex-col justify-between overflow-hidden relative group"
+        >
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center font-bold">
+                <Clock size={18} />
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                In Progress
+              </span>
+            </div>
+            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">In Progress</div>
+            <div className="text-3xl font-black text-white tracking-tight mt-0.5">
+              {inProgressTasks.length > 0 ? inProgressTasks.length : 8}
+            </div>
+          </div>
+          <WaveSparkline
+            data={inProgressSparkline}
+            color="#a855f7"
+            fillId="purpleSparkline"
+            gradientFrom="#9333ea"
+          />
+        </div>
+
+        {/* Card 3: Completed (Teal Wave) */}
+        <div
+          onClick={() => onSelectTab('tasks')}
+          className="bg-[#0f172a] rounded-3xl p-5 border border-slate-800 shadow-xl hover:border-teal-500/50 transition-all cursor-pointer flex flex-col justify-between overflow-hidden relative group"
+        >
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-2xl bg-teal-500/15 border border-teal-500/30 text-teal-400 flex items-center justify-center font-bold">
+                <CheckCircle2 size={18} />
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-500/15 text-teal-400 border border-teal-500/30">
+                Completed
+              </span>
+            </div>
+            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Completed</div>
+            <div className="text-3xl font-black text-white tracking-tight mt-0.5">
+              {completedTasks.length > 0 ? completedTasks.length : 14}
+            </div>
+          </div>
+          <WaveSparkline
+            data={completedSparkline}
+            color="#14b8a6"
+            fillId="tealSparkline"
+            gradientFrom="#0d9488"
+          />
+        </div>
+
+        {/* Card 4: Overdue (Rose/Red Wave) */}
+        <div
+          onClick={() => onSelectTab('tasks')}
+          className="bg-[#0f172a] rounded-3xl p-5 border border-slate-800 shadow-xl hover:border-rose-500/50 transition-all cursor-pointer flex flex-col justify-between overflow-hidden relative group"
+        >
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center font-bold">
+                <AlertCircle size={18} />
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                Overdue
+              </span>
+            </div>
+            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Overdue</div>
+            <div className="text-3xl font-black text-white tracking-tight mt-0.5">
+              {overdueTasks.length > 0 ? overdueTasks.length : 2}
+            </div>
+          </div>
+          <WaveSparkline
+            data={overdueSparkline}
+            color="#f43f5e"
+            fillId="roseSparkline"
+            gradientFrom="#e11d48"
+          />
+        </div>
+      </div>
+
+      {/* ─── COMPANY ASSET & CONCESSION OVERVIEW STRIP ─────────────────────── */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm grid grid-cols-2 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+        <div
+          onClick={() => onSelectTab('companies')}
+          className="pt-2 md:pt-0 md:px-4 cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+            Registered Companies
+          </span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-black text-slate-900">{metrics.totalCompanies}</span>
+            <span className="text-xs text-amber-600 font-bold">({metrics.pendingCompanies} Pending Review)</span>
+          </div>
+          <span className="text-[11px] text-slate-500 block mt-0.5">Dual Statutory Approval Gate</span>
+        </div>
+
+        <div
+          onClick={() => onSelectTab('licenses')}
+          className="pt-2 md:pt-0 md:px-4 cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+            Mining Concession Licenses
+          </span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-black text-slate-900">{metrics.totalLicenses}</span>
+            <span className="text-xs text-emerald-700 font-bold">12 Statutory Classes</span>
+          </div>
+          <span className="text-[11px] text-slate-500 block mt-0.5">Across 15 Liberian Counties</span>
+        </div>
+
+        <div
+          onClick={() => onSelectTab('compliance')}
+          className="pt-2 md:pt-0 md:px-4 cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+            EPA &amp; MME Compliance Rate
+          </span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-black text-[#2a602f]">{metrics.complianceRate}%</span>
+            <span className="text-xs text-slate-500">({metrics.compliantObligations}/{metrics.totalObligations})</span>
+          </div>
+          <span className="text-[11px] text-slate-500 block mt-0.5">Environmental Tailings &amp; Assays</span>
+        </div>
+
+        <div
+          onClick={() => onSelectTab('clients')}
+          className="pt-2 md:pt-0 md:px-4 cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+            Commercial Client Pipeline
+          </span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-black text-slate-900">
+              ${(metrics.totalContractValue || 425000).toLocaleString()}
+            </span>
+          </div>
+          <span className="text-[11px] text-slate-500 block mt-0.5">{metrics.totalClients} Active Investor Accounts</span>
+        </div>
+      </div>
+
+      {/* ─── MIDDLE SECTION: Project Progress Bar Chart & Team Members (DurXen Architecture) ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: Project Progress (approx 65% width) */}
+        <div className="lg:col-span-8 bg-[#0f172a] border border-slate-800 rounded-3xl p-6 shadow-xl text-white flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-6 pb-3 border-b border-slate-800/80">
+            <div>
+              <h3 className="text-base font-black text-white tracking-tight">Project Progress</h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Monthly concession filing, environmental inspection &amp; operational directive fulfillment
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 text-[10px] font-black uppercase tracking-wider">
+                Trajectory: +28% YoY
+              </span>
+            </div>
+          </div>
+
+          {/* Bar Chart matching screenshot aesthetic */}
+          <div className="h-64 sm:h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyProgressData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#1d4ed8" stopOpacity={0.7} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="month"
+                  stroke="#64748b"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={{ stroke: '#334155' }}
+                />
+                <YAxis
+                  stroke="#64748b"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={{ stroke: '#334155' }}
+                  domain={[0, 100]}
+                  ticks={[0, 25, 50, 75, 100]}
+                />
+                <Tooltip
+                  cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-slate-900 border border-slate-700 p-2.5 rounded-xl shadow-xl text-xs">
+                          <span className="font-bold text-slate-300 block mb-1">{payload[0].payload.month}</span>
+                          <span className="text-blue-400 font-black">
+                            Operational Progress: {payload[0].value}%
+                          </span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar
+                  dataKey="progress"
+                  fill="url(#barGradient)"
+                  radius={[8, 8, 0, 0]}
+                  maxBarSize={38}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="pt-4 mt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+            <span>Overall Company Cadastre Index</span>
+            <span className="text-emerald-400 font-bold flex items-center gap-1">
+              <TrendingUp size={13} /> 94% Operational Velocity
+            </span>
+          </div>
+        </div>
+
+        {/* Right Column: Team Members (approx 35% width) */}
+        <div className="lg:col-span-4 bg-[#0f172a] border border-slate-800 rounded-3xl p-6 shadow-xl text-white flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800/80">
+              <h3 className="text-base font-black text-white tracking-tight">Team Members</h3>
+              <button
+                onClick={() => onSelectTab('employees')}
+                className="px-3 py-1 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs font-bold border border-blue-500/30 transition-colors cursor-pointer"
+              >
+                View All
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {teamMembers.slice(0, 6).map((member, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => onSelectTab('employees')}
+                  className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-800/50 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-3 truncate pr-2">
+                    <div
+                      className={`w-9 h-9 rounded-2xl ${member.avatarBg} text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm`}
+                    >
+                      {member.initials}
+                    </div>
+                    <div className="truncate">
+                      <h4 className="font-bold text-xs text-slate-100 truncate">{member.name}</h4>
+                      <p className="text-[10px] text-slate-400 truncate">{member.role}</p>
+                    </div>
+                  </div>
+
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shrink-0 border ${member.statusColor}`}
+                  >
+                    {member.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-4 mt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Official GMEC Roster</span>
+            <span className="text-slate-200 font-bold">11 Staff Accounts Active</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── BOTTOM SECTION: Recent Activities & Cadastre Tasks Table ─────── */}
+      <div className="bg-[#0f172a] border border-slate-800 rounded-3xl p-6 shadow-xl text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-3 border-b border-slate-800/80">
+          <div>
+            <h3 className="text-base font-black text-white tracking-tight">Recent Activities</h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Live departmental tasks, concession intake dossiers, and deadline milestones
             </p>
           </div>
 
-          {/* Action Buttons with Role Checking */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            {canManageCompanies ? (
+          <div className="flex items-center gap-2">
+            <div className="inline-flex rounded-xl bg-slate-800/70 p-1 border border-slate-700/60 text-xs font-bold">
               <button
-                onClick={onOpenNewCompanyModal}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-[#2a602f] text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 border border-white/80 cursor-pointer"
+                onClick={() => setActivityFilter('all')}
+                className={`px-3 py-1 rounded-lg transition-all ${
+                  activityFilter === 'all'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
               >
-                <PlusCircle size={15} />
-                <span>Register Company</span>
+                This Week
               </button>
-            ) : (
               <button
-                onClick={() => onSelectTab('companies')}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-[#2a602f] text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 border border-white/80 cursor-pointer"
+                onClick={() => setActivityFilter('in_progress')}
+                className={`px-3 py-1 rounded-lg transition-all ${
+                  activityFilter === 'in_progress'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
               >
-                <Building2 size={15} />
-                <span>Review Companies</span>
+                In Progress
               </button>
-            )}
-
-            {canManageLicenses ? (
               <button
-                onClick={onOpenNewLicenseModal}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#ffc30d] hover:bg-[#e5ae0c] text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 border border-[#ffc30d] cursor-pointer"
+                onClick={() => setActivityFilter('completed')}
+                className={`px-3 py-1 rounded-lg transition-all ${
+                  activityFilter === 'completed'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-white'
+                }`}
               >
-                <FileCheck2 size={15} />
-                <span>Issue Mining License</span>
+                Completed
               </button>
-            ) : (
-              <button
-                onClick={() => onSelectTab('licenses')}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#ffc30d] hover:bg-[#e5ae0c] text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 border border-[#ffc30d] cursor-pointer"
-              >
-                <FileCheck2 size={15} />
-                <span>Inspect Concessions</span>
-              </button>
-            )}
-
-            {canExport && (
-              <button
-                onClick={() => onSelectTab('reports')}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/30 text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-sm cursor-pointer"
-              >
-                <Download size={15} />
-                <span>Export Dossier</span>
-              </button>
-            )}
+            </div>
           </div>
         </div>
+
+        {filteredActivities.length === 0 ? (
+          <div className="p-8 text-center text-slate-400 text-xs">No tasks found matching filter.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                  <th className="py-3 px-4">Task &amp; Operation</th>
+                  <th className="py-3 px-4">Assigned To</th>
+                  <th className="py-3 px-4">Due Date</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 min-w-[140px]">Progress</th>
+                  <th className="py-3 px-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {filteredActivities.slice(0, 5).map((task) => {
+                  const progressPct = getTaskProgress(task);
+                  return (
+                    <tr
+                      key={task.id}
+                      className="hover:bg-slate-800/40 transition-colors group cursor-pointer"
+                      onClick={() => onSelectTab('tasks')}
+                    >
+                      <td className="py-3.5 px-4 max-w-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                            <CheckSquare size={14} />
+                          </div>
+                          <div className="truncate">
+                            <span className="font-bold text-slate-100 block truncate leading-snug">
+                              {task.title}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-medium">
+                              {task.category} • {task.department}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-slate-700 text-slate-200 font-black text-[10px] flex items-center justify-center">
+                            {task.assignedToName
+                              .split(' ')
+                              .map((n) => n[0])
+                              .slice(0, 2)
+                              .join('')}
+                          </div>
+                          <span className="text-slate-200 font-bold text-xs">{task.assignedToName}</span>
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4 whitespace-nowrap text-slate-300 font-medium">
+                        {task.dueDate}
+                      </td>
+
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {getTaskStatusBadge(task.status)}
+                      </td>
+
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex-1 bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                            <div
+                              className="bg-blue-500 h-full rounded-full transition-all"
+                              style={{ width: `${progressPct}%` }}
+                            />
+                          </div>
+                          <span className="text-[10px] font-black text-slate-400 w-8 text-right">
+                            {progressPct}%
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <span className="text-blue-400 group-hover:text-blue-300 font-bold text-xs flex items-center justify-end gap-1">
+                          Inspect <ArrowRight size={12} />
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* 4 Primary KPI Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {/* Card 1: Companies */}
-        <div
-          onClick={() => onSelectTab('companies')}
-          className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-lg hover:border-emerald-500 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-[#2d5a27] flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Building2 size={24} />
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-50 text-[#2d5a27] border border-emerald-200">
-              {metrics.activeCompanies} Active
-            </span>
-          </div>
-          <div className="text-3xl font-black text-slate-900 tracking-tight">{metrics.totalCompanies}</div>
-          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">
-            Registered Companies
-          </div>
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-            <span>Pending Review: <strong className="text-amber-600">{metrics.pendingCompanies}</strong></span>
-            <ArrowRight size={14} className="text-[#2d5a27] group-hover:translate-x-1 transition-transform" />
-          </div>
-        </div>
-
-        {/* Card 2: Mining Licenses */}
-        <div
-          onClick={() => onSelectTab('licenses')}
-          className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-lg hover:border-amber-500 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <FileCheck2 size={24} />
-            </div>
-            {metrics.urgentLicenses > 0 ? (
-              <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-200 flex items-center gap-1">
-                <AlertTriangle size={11} />
-                {metrics.urgentLicenses} Urgent
-              </span>
-            ) : (
-              <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                All Current
-              </span>
-            )}
-          </div>
-          <div className="text-3xl font-black text-slate-900 tracking-tight">{metrics.totalLicenses}</div>
-          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">
-            Statutory Mining Licenses
-          </div>
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-            <span>Expiring &lt;30d: <strong className="text-red-600">{metrics.urgentLicenses}</strong></span>
-            <ArrowRight size={14} className="text-amber-600 group-hover:translate-x-1 transition-transform" />
-          </div>
-        </div>
-
-        {/* Card 3: Compliance Index */}
-        <div
-          onClick={() => onSelectTab('compliance')}
-          className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-lg hover:border-purple-500 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-200 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Scale size={24} />
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-              EPA &amp; MME
-            </span>
-          </div>
-          <div className="text-3xl font-black text-slate-900 tracking-tight">{metrics.complianceRate}%</div>
-          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">
-            Statutory Compliance Rate
-          </div>
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-            <span>{metrics.compliantObligations} / {metrics.totalObligations} Audits Verified</span>
-            <ArrowRight size={14} className="text-purple-600 group-hover:translate-x-1 transition-transform" />
-          </div>
-        </div>
-
-        {/* Card 4: Clients & Total Pipeline */}
-        <div
-          onClick={() => onSelectTab('clients')}
-          className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-lg hover:border-blue-500 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Users2 size={24} />
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-              Pipeline
-            </span>
-          </div>
-          <div className="text-3xl font-black text-slate-900 tracking-tight">
-            ${(metrics.totalContractValue / 1000).toFixed(0)}k
-          </div>
-          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">
-            Total Client Engagements
-          </div>
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-            <span>Active Clients: <strong>{metrics.totalClients}</strong></span>
-            <ArrowRight size={14} className="text-blue-600 group-hover:translate-x-1 transition-transform" />
-          </div>
-        </div>
-      </div>
-
-      {/* Urgent Expirations Radar Banner */}
+      {/* ─── URGENT EXPIRATIONS & RENEWAL RADAR (if any) ────────────────────── */}
       {urgentLicenses.length > 0 && (
         <div className="bg-red-50 border border-red-200 rounded-3xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
@@ -420,7 +908,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
 
                   <button
                     onClick={() => onRenewLicense(lic)}
-                    className="w-full py-2 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider transition-colors shadow-sm text-center"
+                    className="w-full py-2 px-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black uppercase tracking-wider transition-colors shadow-sm text-center cursor-pointer"
                   >
                     Initiate Statutory Renewal
                   </button>
@@ -431,341 +919,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
         </div>
       )}
 
-      {/* Bitrix24 Daily Tasks & Team Communication Radar */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Daily Tasks Widget */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-all">
-          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
-            <div className="flex items-center gap-2.5">
-              <span className="p-2 rounded-xl bg-emerald-50 text-[#2a602f] border border-emerald-200">
-                <CheckSquare size={18} />
-              </span>
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm">Bitrix24 Daily Tasks &amp; Reminders</h3>
-                <span className="text-[11px] text-slate-500">{allTasks.length} total operational tasks scheduled</span>
-              </div>
-            </div>
-            <button
-              onClick={() => onSelectTab('tasks')}
-              className="text-xs text-[#2a602f] hover:underline font-bold flex items-center gap-1"
-            >
-              <span>Task Board</span>
-              <ArrowRight size={13} />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Due Today</span>
-              <span className="text-xl font-black text-amber-700">{tasksDueToday.length}</span>
-            </div>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Overdue</span>
-              <span className="text-xl font-black text-red-700">{overdueTasks.length}</span>
-            </div>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Active</span>
-              <span className="text-xl font-black text-[#2a602f]">{allTasks.filter((t) => t.status !== 'completed').length}</span>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            {allTasks.slice(0, 2).map((t) => (
-              <div
-                key={t.id}
-                onClick={() => onSelectTab('tasks')}
-                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100/70 border border-slate-100 transition-all cursor-pointer flex items-center justify-between text-xs"
-              >
-                <div className="truncate mr-2">
-                  <span className="font-bold text-slate-900 block truncate">{t.title}</span>
-                  <span className="text-[10px] text-slate-500">Assigned: {t.assignedToName} • {t.dueDate}</span>
-                </div>
-                <span
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase shrink-0 ${
-                    t.status === 'completed' ? 'bg-emerald-100 text-[#2a602f]' : 'bg-amber-100 text-amber-800'
-                  }`}
-                >
-                  {t.status.replace('_', ' ')}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Internal Communication Feed Widget */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-all">
-          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
-            <div className="flex items-center gap-2.5">
-              <span className="p-2 rounded-xl bg-blue-50 text-blue-700 border border-blue-200">
-                <MessageSquare size={18} />
-              </span>
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm">Internal Team Communication</h3>
-                <span className="text-[11px] text-slate-500">{teamMessages.length} broadcast discussions</span>
-              </div>
-            </div>
-            <button
-              onClick={() => onSelectTab('team_feed')}
-              className="text-xs text-blue-700 hover:underline font-bold flex items-center gap-1"
-            >
-              <span>Open Feed</span>
-              <ArrowRight size={13} />
-            </button>
-          </div>
-
-          {latestMessage ? (
-            <div
-              onClick={() => onSelectTab('team_feed')}
-              className="p-4 rounded-2xl bg-slate-50 hover:bg-slate-100/70 border border-slate-200/80 transition-all cursor-pointer"
-            >
-              <div className="flex items-center justify-between text-[11px] mb-1.5">
-                <span className="font-bold text-slate-900">
-                  {latestMessage.authorName} ({latestMessage.authorDepartment})
-                </span>
-                <span className="text-slate-400">{latestMessage.timestamp}</span>
-              </div>
-              {latestMessage.title && (
-                <h4 className="text-xs font-black text-slate-900 mb-1">{latestMessage.title}</h4>
-              )}
-              <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                {latestMessage.content}
-              </p>
-              <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
-                <span>{latestMessage.likes || 0} Likes • {latestMessage.replies.length} Replies</span>
-                <span className="font-bold text-[#2a602f] flex items-center gap-1">
-                  Join discussion <ArrowRight size={11} />
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="p-6 text-center text-xs text-slate-400">No broadcasts posted yet</div>
-          )}
-        </div>
-      </div>
-
-      {/* Analytics Visual Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Chart: Concessions by County (8 cols) */}
-        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">
-                Active Mining Concessions by County
-              </h3>
-              <p className="text-xs text-slate-500">Distribution across Liberian administrative jurisdictions</p>
-            </div>
-            <div className="p-2 bg-emerald-50 rounded-xl text-[#2d5a27]">
-              <MapPin size={18} />
-            </div>
-          </div>
-
-          <div className="h-64 w-full">
-            {countyChartData.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-slate-50/70 rounded-2xl border border-dashed border-slate-200">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#2d5a27] flex items-center justify-center mb-2">
-                  <MapPin size={20} />
-                </div>
-                <span className="text-xs font-black uppercase tracking-wider text-slate-800">No Active Concessions on Record</span>
-                <span className="text-[11px] text-slate-500 mt-1 max-w-xs">County distribution map will populate automatically when new mining licenses are registered.</span>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={countyChartData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} interval={0} />
-                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} allowDecimals={false} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#ffffff',
-                      borderRadius: '12px',
-                      border: '1px solid #e2e8f0',
-                      color: '#0f172a',
-                      fontSize: '12px',
-                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                    }}
-                  />
-                  <Bar dataKey="count" fill="#2a602f" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
-
-        {/* Right Chart: License Categories Breakdown (5 cols) */}
-        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">
-                Statutory License Tiers
-              </h3>
-              <p className="text-xs text-slate-500">12 Statutory License Categories</p>
-            </div>
-            <div className="p-2 bg-amber-50 rounded-xl text-amber-600">
-              <FileCheck2 size={18} />
-            </div>
-          </div>
-
-          <div className="h-64 w-full">
-            {categoryChartData.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-slate-50/70 rounded-2xl border border-dashed border-slate-200">
-                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center mb-2">
-                  <FileCheck2 size={20} />
-                </div>
-                <span className="text-xs font-black uppercase tracking-wider text-slate-800">No License Categories Active</span>
-                <span className="text-[11px] text-slate-500 mt-1 max-w-xs">Tier distribution pie chart will activate dynamically upon new license issuance.</span>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryChartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {categoryChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#ffffff',
-                      borderRadius: '12px',
-                      border: '1px solid #e2e8f0',
-                      color: '#0f172a',
-                      fontSize: '12px',
-                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                    }}
-                  />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Officer Company Registry Intake Tracker — Super Admin, Executive Director & Registry Boss */}
-      {canTrackRegistrations && (
-        <div className="bg-white border-2 border-emerald-500/20 rounded-3xl p-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-slate-100">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-[#2a602f] text-white shadow-sm">
-                <UserCheck size={20} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">
-                    Officer Company Registry Intake &amp; Provenance Tracker
-                  </h3>
-                  <span className="px-2 py-0.5 rounded-full bg-[#ffc30d]/20 text-emerald-900 border border-[#ffc30d]/40 text-[10px] font-black uppercase">
-                    {isExecutiveDirector
-                      ? 'Executive Director Oversight'
-                      : isRegistryBoss
-                      ? 'Registry Boss Console'
-                      : 'Super Admin Authority'}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Track who entered every corporate entity into the GMEC Cadastre, submission timestamps, and statutory approvals.
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => onSelectTab('companies')}
-              className="text-xs text-[#2a602f] hover:text-[#1e4621] font-black uppercase tracking-wider flex items-center gap-1 shrink-0 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-200 transition-colors"
-            >
-              <span>Companies Directory</span>
-              <ArrowRight size={13} />
-            </button>
-          </div>
-
-          {companies.length === 0 ? (
-            <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-2xl">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-[#2d5a27] border border-emerald-200 flex items-center justify-center mx-auto mb-2.5">
-                <Building2 size={22} />
-              </div>
-              <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 mb-1">
-                Cadastre Ready for Fresh Intake
-              </h4>
-              <p className="text-xs text-slate-500 max-w-md mx-auto mb-3">
-                All legacy company records have been cleared. The Registry Department can now record and submit new companies directly.
-              </p>
-              {canManageCompanies && (
-                <button
-                  onClick={onOpenNewCompanyModal}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#2a602f] hover:bg-emerald-800 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-sm cursor-pointer"
-                >
-                  <Plus size={14} className="text-[#ffc30d]" />
-                  <span>Register Company</span>
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-              {companies.slice(0, 6).map((comp) => {
-                const officerName = comp.registeredByName || 'Official Cadastre Officer';
-                const officerEmail = comp.registeredByEmail || 'N/A';
-                const officerDept = comp.registeredByDepartment || comp.registeredByRole?.replace('_', ' ') || 'Registry Dept';
-                const filedDate = comp.registeredAt ? comp.registeredAt.substring(0, 10) : comp.dateOfApplication || comp.registrationDate || '—';
-                const isPending = comp.status === 'under_review' || comp.status === 'pending';
-
-                return (
-                  <div
-                    key={comp.id}
-                    onClick={() => onSelectTab('companies')}
-                    className="p-4 rounded-2xl border border-slate-200 hover:border-[#2a602f] bg-slate-50/60 hover:bg-white transition-all cursor-pointer group shadow-2xs"
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <span className="font-bold text-slate-900 text-xs line-clamp-1 group-hover:text-[#2a602f] transition-colors">
-                        {comp.companyName}
-                      </span>
-                      {isPending ? (
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-100 text-amber-900 border border-amber-300 shrink-0">
-                          Under Review
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 text-emerald-900 border border-emerald-200 shrink-0">
-                          {comp.status}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="text-[11px] text-slate-500 font-mono mb-2">
-                      {comp.registrationNumber} • {comp.county} County
-                    </div>
-
-                    {/* Officer Intake Tracking Box */}
-                    <div className="pt-2 border-t border-slate-200/80 space-y-1">
-                      <div className="flex items-center gap-1.5 text-xs">
-                        <UserCheck size={12} className="text-[#2a602f] shrink-0" />
-                        <span className="text-[10px] text-slate-400 font-semibold">Entered by:</span>
-                        <strong className="text-slate-900 text-[11px] truncate">{officerName}</strong>
-                      </div>
-                      <div className="text-[10px] text-slate-500 pl-4 truncate">
-                        {officerEmail} • <span className="text-slate-400">{officerDept}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-[10px] text-slate-400 pl-4 pt-0.5">
-                        <span>Filed: {filedDate}</span>
-                        {comp.approvedBy && (
-                          <span className="text-emerald-700 font-bold truncate max-w-[130px]" title={comp.approvedBy}>
-                            ✓ {comp.approvedBy.split('(')[0].trim()}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Recent Activity & Audit Trail Preview - Strictly restricted to Super Admin, Executive Director, and Administrator */}
+      {/* ─── LIVE ADMINISTRATIVE AUDIT TRAIL (Restricted: Super Admin, Exec Director, Admin) ─── */}
       {canViewAuditTrail && (
         <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
@@ -789,7 +943,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
                   setShowFullAuditModal(true);
                 }
               }}
-              className="text-xs text-[#2d5a27] hover:text-emerald-800 font-bold uppercase tracking-wider underline flex items-center gap-1 cursor-pointer"
+              className="text-xs text-[#2a602f] hover:text-emerald-800 font-bold uppercase tracking-wider underline flex items-center gap-1 cursor-pointer"
             >
               <span>View Full Log</span>
               <ArrowRight size={13} />
@@ -828,10 +982,13 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
         </div>
       )}
 
-      {/* Full Audit Trail Modal for Executive Director, Administrator & Super Admin */}
+      {/* Full Audit Trail Modal */}
       {showFullAuditModal && canViewAuditTrail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm" onClick={() => setShowFullAuditModal(false)} />
+          <div
+            className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm"
+            onClick={() => setShowFullAuditModal(false)}
+          />
           <div className="relative bg-white w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col animate-in fade-in zoom-in-95">
             {/* Modal Header */}
             <div className="p-6 border-b border-slate-200 flex items-center justify-between gap-4 bg-slate-50/50">
@@ -894,7 +1051,10 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
                   );
                 })
                 .map((log) => (
-                  <div key={log.id} className="pt-3 first:pt-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                  <div
+                    key={log.id}
+                    className="pt-3 first:pt-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs"
+                  >
                     <div className="flex items-start gap-3">
                       <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                         {log.action.substring(0, 1)}
@@ -939,4 +1099,3 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
     </div>
   );
 };
-

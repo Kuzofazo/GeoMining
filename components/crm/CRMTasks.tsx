@@ -878,3 +878,4 @@ export const CRMTasks: React.FC<CRMTasksProps> = ({ initialSearch = '' }) => {
     </div>
   );
 };
+
