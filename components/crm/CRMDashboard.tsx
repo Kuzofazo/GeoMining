@@ -24,6 +24,9 @@ import {
   Shield,
   Award,
   Search,
+  CheckSquare,
+  MessageSquare,
+  FolderLock,
 } from 'lucide-react';
 import {
   BarChart,
@@ -76,6 +79,11 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
   const [showFullAuditModal, setShowFullAuditModal] = useState<boolean>(false);
   const [auditSearch, setAuditSearch] = useState<string>('');
   const allAuditLogs = crmService.getAuditLogs();
+  const tasksDueToday = crmService.getTasksDueToday();
+  const overdueTasks = crmService.getOverdueTasks();
+  const allTasks = crmService.getTasks();
+  const teamMessages = crmService.getTeamMessages();
+  const latestMessage = teamMessages[0];
 
   // Expiring licenses within 60 days or expired
   const urgentLicenses = licenses.filter(
@@ -422,6 +430,118 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
           </div>
         </div>
       )}
+
+      {/* Bitrix24 Daily Tasks & Team Communication Radar */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        {/* Daily Tasks Widget */}
+        <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-all">
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <span className="p-2 rounded-xl bg-emerald-50 text-[#2a602f] border border-emerald-200">
+                <CheckSquare size={18} />
+              </span>
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Bitrix24 Daily Tasks &amp; Reminders</h3>
+                <span className="text-[11px] text-slate-500">{allTasks.length} total operational tasks scheduled</span>
+              </div>
+            </div>
+            <button
+              onClick={() => onSelectTab('tasks')}
+              className="text-xs text-[#2a602f] hover:underline font-bold flex items-center gap-1"
+            >
+              <span>Task Board</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Due Today</span>
+              <span className="text-xl font-black text-amber-700">{tasksDueToday.length}</span>
+            </div>
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Overdue</span>
+              <span className="text-xl font-black text-red-700">{overdueTasks.length}</span>
+            </div>
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Active</span>
+              <span className="text-xl font-black text-[#2a602f]">{allTasks.filter((t) => t.status !== 'completed').length}</span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {allTasks.slice(0, 2).map((t) => (
+              <div
+                key={t.id}
+                onClick={() => onSelectTab('tasks')}
+                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100/70 border border-slate-100 transition-all cursor-pointer flex items-center justify-between text-xs"
+              >
+                <div className="truncate mr-2">
+                  <span className="font-bold text-slate-900 block truncate">{t.title}</span>
+                  <span className="text-[10px] text-slate-500">Assigned: {t.assignedToName} • {t.dueDate}</span>
+                </div>
+                <span
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase shrink-0 ${
+                    t.status === 'completed' ? 'bg-emerald-100 text-[#2a602f]' : 'bg-amber-100 text-amber-800'
+                  }`}
+                >
+                  {t.status.replace('_', ' ')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Internal Communication Feed Widget */}
+        <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-all">
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <span className="p-2 rounded-xl bg-blue-50 text-blue-700 border border-blue-200">
+                <MessageSquare size={18} />
+              </span>
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Internal Team Communication</h3>
+                <span className="text-[11px] text-slate-500">{teamMessages.length} broadcast discussions</span>
+              </div>
+            </div>
+            <button
+              onClick={() => onSelectTab('team_feed')}
+              className="text-xs text-blue-700 hover:underline font-bold flex items-center gap-1"
+            >
+              <span>Open Feed</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
+
+          {latestMessage ? (
+            <div
+              onClick={() => onSelectTab('team_feed')}
+              className="p-4 rounded-2xl bg-slate-50 hover:bg-slate-100/70 border border-slate-200/80 transition-all cursor-pointer"
+            >
+              <div className="flex items-center justify-between text-[11px] mb-1.5">
+                <span className="font-bold text-slate-900">
+                  {latestMessage.authorName} ({latestMessage.authorDepartment})
+                </span>
+                <span className="text-slate-400">{latestMessage.timestamp}</span>
+              </div>
+              {latestMessage.title && (
+                <h4 className="text-xs font-black text-slate-900 mb-1">{latestMessage.title}</h4>
+              )}
+              <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                {latestMessage.content}
+              </p>
+              <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
+                <span>{latestMessage.likes || 0} Likes • {latestMessage.replies.length} Replies</span>
+                <span className="font-bold text-[#2a602f] flex items-center gap-1">
+                  Join discussion <ArrowRight size={11} />
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="p-6 text-center text-xs text-slate-400">No broadcasts posted yet</div>
+          )}
+        </div>
+      </div>
 
       {/* Analytics Visual Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

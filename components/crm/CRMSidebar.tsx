@@ -11,6 +11,10 @@ import {
   ExternalLink,
   MapPin,
   Clock,
+  CheckSquare,
+  Users,
+  FolderLock,
+  MessageSquare,
 } from 'lucide-react';
 import { crmService } from '../../lib/crmService';
 
@@ -30,6 +34,9 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
   const metrics = crmService.getDashboardMetrics();
   const currentUser = crmService.getCurrentUser();
   const role = currentUser?.role || 'registry_department';
+  const overdueTasksCount = crmService.getOverdueTasks().length;
+  const totalTasksCount = crmService.getTasks().length;
+  const vaultDocsCount = crmService.getVaultDocuments().length;
 
   const allNavItems = [
     {
@@ -50,6 +57,37 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
         metrics.pendingCompanies > 0
           ? 'bg-amber-50 text-amber-800 border border-amber-300'
           : 'bg-slate-100 text-slate-600 border border-slate-200',
+    },
+    {
+      id: 'tasks',
+      label: 'Daily Tasks & Deadlines',
+      subtitle: 'Bitrix24 Daily Workflows',
+      icon: CheckSquare,
+      badge: overdueTasksCount > 0 ? `${overdueTasksCount} Late` : `${totalTasksCount}`,
+      badgeColor:
+        overdueTasksCount > 0
+          ? 'bg-red-50 text-red-700 border border-red-200 font-bold'
+          : 'bg-emerald-50 text-[#2a602f] border border-emerald-200 font-bold',
+    },
+    {
+      id: 'employees',
+      label: 'Employee Directory & Org',
+      subtitle: 'Profiles, Org Chart & KPIs',
+      icon: Users,
+    },
+    {
+      id: 'documents',
+      label: 'Document Storage Vault',
+      subtitle: 'Centralized Regulatory Archives',
+      icon: FolderLock,
+      badge: `${vaultDocsCount}`,
+      badgeColor: 'bg-slate-100 text-slate-700 border border-slate-200',
+    },
+    {
+      id: 'team_feed',
+      label: 'Internal Communication',
+      subtitle: 'Broadcast Feed & Collaboration',
+      icon: MessageSquare,
     },
     {
       id: 'licenses',
@@ -98,11 +136,18 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
       return true; // Super admin has unrestricted access to every module
     }
     if (role === 'registry_department') {
-      // Registry department is restricted to Dashboard and Company Registration data entry only
-      return item.id === 'dashboard' || item.id === 'companies';
+      // Registry department has access to Dashboard, Company Registration, Daily Tasks, Employees, Documents, and Team Feed
+      return (
+        item.id === 'dashboard' ||
+        item.id === 'companies' ||
+        item.id === 'tasks' ||
+        item.id === 'employees' ||
+        item.id === 'documents' ||
+        item.id === 'team_feed'
+      );
     }
     if (role === 'management' || role === 'administrator') {
-      // Executive Director and Administrator see dashboard oversight, company records, licenses, compliance, and reports (NO security module)
+      // Executive Director and Administrator see all modules except low-level security
       return item.id !== 'security';
     }
     if (role === 'compliance_officer') {

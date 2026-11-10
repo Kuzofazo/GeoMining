@@ -263,7 +263,8 @@ export interface AuditLogEntry {
     | 'ACCOUNT_UNLOCK'
     | 'COMMENT_ADDED'
     | 'BACKUP_EXPORT'
-    | 'BACKUP_RESTORE';
+    | 'BACKUP_RESTORE'
+    | 'POST';
   module:
     | 'Company Registration'
     | 'Mining Licenses'
@@ -273,7 +274,11 @@ export interface AuditLogEntry {
     | 'Reports'
     | 'Security'
     | 'Comments'
-    | 'Disaster Recovery';
+    | 'Disaster Recovery'
+    | 'Daily Tasks'
+    | 'Document Vault'
+    | 'Team Feed'
+    | 'Org Structure';
   targetRecordId?: string;
   targetRecordName?: string;
   details: string;
@@ -362,5 +367,147 @@ export interface RecordComment {
   timestamp: string;
   content: string;
 }
+
+// ─── Bitrix24-Style Daily Tasks, Tracking & Deadlines ──────────────────────────
+
+export type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
+export type TaskStatus = 'todo' | 'in_progress' | 'review' | 'completed';
+export type TaskCategory =
+  | 'Daily Intake'
+  | 'Field Inspection'
+  | 'Concession Verification'
+  | 'Regulatory Audit'
+  | 'Client Follow-up'
+  | 'Executive Directive'
+  | 'General Operations';
+
+export interface TaskChecklistItem {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface CRMTask {
+  id: string;
+  title: string;
+  description: string;
+  assignedToId: string;
+  assignedToName: string;
+  assignedToEmail: string;
+  assignedToRole: UserRole;
+  department: string;
+  createdById: string;
+  createdByName: string;
+  createdByRole: UserRole;
+  priority: TaskPriority;
+  status: TaskStatus;
+  category: TaskCategory;
+  dueDate: string; // YYYY-MM-DD
+  dueTime?: string; // HH:mm
+  checklist: TaskChecklistItem[];
+  relatedCompanyId?: string;
+  relatedCompanyName?: string;
+  relatedLicenseId?: string;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+  completedByName?: string;
+  reminderSent?: boolean;
+  notes?: string;
+}
+
+// ─── Bitrix24-Style Centralized Document Vault ────────────────────────────────
+
+export type VaultDocumentCategory =
+  | 'Articles of Incorporation'
+  | 'Mining Concession Deed'
+  | 'EPA Clearance'
+  | 'MME Mineral Cadastre'
+  | 'Tax Clearance (LRA)'
+  | 'Technical Survey & Report'
+  | 'Executive Directive'
+  | 'Standard Operating Procedure (SOP)'
+  | 'Legal Agreement';
+
+export interface VaultDocument {
+  id: string;
+  title: string;
+  fileName: string;
+  fileSize: string;
+  fileFormat: string; // e.g. 'PDF', 'DOCX', 'XLSX', 'GEOJSON'
+  category: VaultDocumentCategory;
+  department: string;
+  companyName?: string;
+  licenseNumber?: string;
+  uploadedByName: string;
+  uploadedByEmail: string;
+  uploadedByRole: UserRole;
+  uploadedAt: string;
+  verified: boolean;
+  confidential: boolean;
+  description?: string;
+  downloadUrl?: string;
+}
+
+// ─── Bitrix24-Style Internal Communication & Team Feed ────────────────────────
+
+export interface TeamMessageReply {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorRole: UserRole;
+  authorDepartment: string;
+  content: string;
+  timestamp: string;
+}
+
+export interface TeamMessage {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorRole: UserRole;
+  authorDepartment: string;
+  title?: string;
+  content: string;
+  category: 'announcement' | 'operational' | 'urgent' | 'general';
+  isPinned?: boolean;
+  likes: number;
+  likedByUsers?: string[]; // user emails
+  replies: TeamMessageReply[];
+  timestamp: string;
+}
+
+// ─── Bitrix24-Style Employee Performance Metrics ──────────────────────────────
+
+export interface EmployeePerformanceMetric {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  role: UserRole;
+  department: string;
+  totalAssignedTasks: number;
+  completedTasks: number;
+  inProgressTasks: number;
+  reviewTasks: number;
+  overdueTasks: number;
+  completionRatePct: number;
+  onTimeRatePct: number;
+  efficiencyScore: number; // 0-100
+  registeredCompaniesCount?: number;
+  lastActive?: string;
+}
+
+export interface DepartmentSummary {
+  id: string;
+  name: string;
+  headName: string;
+  headEmail: string;
+  employeeCount: number;
+  activeTaskCount: number;
+  completedTaskCount: number;
+  departmentCompletionRate: number;
+  description: string;
+}
+
 
 

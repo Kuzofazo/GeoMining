@@ -17,6 +17,16 @@ import {
   ActiveSession,
   AccountLockout,
   RecordComment,
+  CRMTask,
+  TaskStatus,
+  TaskPriority,
+  TaskCategory,
+  VaultDocument,
+  VaultDocumentCategory,
+  TeamMessage,
+  TeamMessageReply,
+  EmployeePerformanceMetric,
+  DepartmentSummary,
 } from '../types/crm';
 import {
   INITIAL_CRM_USERS,
@@ -26,6 +36,12 @@ import {
   INITIAL_AUDIT_LOGS,
   INITIAL_NOTIFICATIONS,
 } from './crmData';
+import {
+  INITIAL_TASKS,
+  INITIAL_VAULT_DOCUMENTS,
+  INITIAL_TEAM_MESSAGES,
+  GMEC_DEPARTMENTS,
+} from './bitrixData';
 import { captureDeviceTelemetry, DeviceTelemetry } from './securityTelemetry';
 import { securityAlarm } from './audioAlarm';
 
@@ -43,6 +59,9 @@ const STORAGE_KEYS = {
   RECORD_COMMENTS: 'gmec_crm_comments_v2',
   ACTIVE_SESSIONS: 'gmec_crm_active_sessions_v2',
   LAST_ACTIVITY: 'gmec_crm_last_activity_v2',
+  TASKS: 'gmec_crm_tasks_v1',
+  VAULT_DOCS: 'gmec_crm_vault_docs_v1',
+  TEAM_MESSAGES: 'gmec_crm_team_messages_v1',
 };
 
 // Safe JSON loader
@@ -83,6 +102,11 @@ export interface RolePermissions {
   canBackupRestoreDatabase: boolean;
   canAddComments: boolean;
   canViewComments: boolean;
+  canManageTasks: boolean;
+  canAssignTasks: boolean;
+  canViewPerformance: boolean;
+  canManageDocuments: boolean;
+  canPostMessages: boolean;
 }
 
 export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
@@ -103,6 +127,11 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canBackupRestoreDatabase: true,
     canAddComments: true,
     canViewComments: true,
+    canManageTasks: true,
+    canAssignTasks: true,
+    canViewPerformance: true,
+    canManageDocuments: true,
+    canPostMessages: true,
   },
   administrator: {
     canManageCompanies: false,
@@ -121,6 +150,11 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canBackupRestoreDatabase: false,
     canAddComments: true,
     canViewComments: true,
+    canManageTasks: true,
+    canAssignTasks: true,
+    canViewPerformance: true,
+    canManageDocuments: true,
+    canPostMessages: true,
   },
   management: {
     canManageCompanies: false,
@@ -139,6 +173,11 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canBackupRestoreDatabase: false,
     canAddComments: true,
     canViewComments: true,
+    canManageTasks: true,
+    canAssignTasks: true,
+    canViewPerformance: true,
+    canManageDocuments: true,
+    canPostMessages: true,
   },
   registry_department: {
     canManageCompanies: true, // Data entry for company registration
@@ -157,6 +196,11 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canBackupRestoreDatabase: false,
     canAddComments: true,
     canViewComments: true,
+    canManageTasks: true,
+    canAssignTasks: false,
+    canViewPerformance: true,
+    canManageDocuments: true,
+    canPostMessages: true,
   },
   it_department: {
     canManageCompanies: false,
@@ -175,6 +219,11 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canBackupRestoreDatabase: true,
     canAddComments: true,
     canViewComments: true,
+    canManageTasks: true,
+    canAssignTasks: true,
+    canViewPerformance: true,
+    canManageDocuments: true,
+    canPostMessages: true,
   },
   compliance_officer: {
     canManageCompanies: false,
@@ -193,6 +242,11 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canBackupRestoreDatabase: false,
     canAddComments: true,
     canViewComments: true,
+    canManageTasks: true,
+    canAssignTasks: true,
+    canViewPerformance: true,
+    canManageDocuments: true,
+    canPostMessages: true,
   },
 };
 
@@ -322,6 +376,9 @@ class CRMStore {
   private accountLockouts: AccountLockout[] = [];
   private recordComments: RecordComment[] = [];
   private activeSessions: ActiveSession[] = [];
+  private tasks: CRMTask[] = [];
+  private vaultDocuments: VaultDocument[] = [];
+  private teamMessages: TeamMessage[] = [];
   private currentUser: CRMUser | null = null;
   private listeners: (() => void)[] = [];
 
@@ -381,6 +438,9 @@ class CRMStore {
     this.accountLockouts = loadFromStorage(STORAGE_KEYS.ACCOUNT_LOCKOUTS, []);
     this.recordComments = loadFromStorage(STORAGE_KEYS.RECORD_COMMENTS, INITIAL_RECORD_COMMENTS);
     this.activeSessions = loadFromStorage(STORAGE_KEYS.ACTIVE_SESSIONS, []);
+    this.tasks = loadFromStorage(STORAGE_KEYS.TASKS, INITIAL_TASKS);
+    this.vaultDocuments = loadFromStorage(STORAGE_KEYS.VAULT_DOCS, INITIAL_VAULT_DOCUMENTS);
+    this.teamMessages = loadFromStorage(STORAGE_KEYS.TEAM_MESSAGES, INITIAL_TEAM_MESSAGES);
 
     // Load active session user if present
     try {
@@ -1822,6 +1882,371 @@ class CRMStore {
     document.body.removeChild(link);
 
     this.logAudit('EXPORT', 'Reports', `Generated and downloaded CSV export: ${filename}`);
+  }
+
+  // ─── Bitrix24 Daily Tasks, Reminders & Deadlines ───────────────────────────
+  getTasks(): CRMTask[] {
+    return [...this.tasks].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  getTasksByUser(userIdOrEmail: string): CRMTask[] {
+    const query = userIdOrEmail.toLowerCase();
+    return this.tasks.filter(
+      (t) => t.assignedToId.toLowerCase() === query || t.assignedToEmail.toLowerCase() === query
+    );
+  }
+
+  getTaskById(id: string): CRMTask | undefined {
+    return this.tasks.find((t) => t.id === id);
+  }
+
+  getOverdueTasks(): CRMTask[] {
+    const today = new Date().toISOString().substring(0, 10);
+    return this.tasks.filter((t) => t.status !== 'completed' && t.dueDate < today);
+  }
+
+  getTasksDueToday(): CRMTask[] {
+    const today = new Date().toISOString().substring(0, 10);
+    return this.tasks.filter((t) => t.status !== 'completed' && t.dueDate === today);
+  }
+
+  addTask(taskData: {
+    title: string;
+    description: string;
+    assignedToId: string;
+    assignedToName: string;
+    assignedToEmail: string;
+    assignedToRole: UserRole;
+    department: string;
+    priority: TaskPriority;
+    category: TaskCategory;
+    dueDate: string;
+    dueTime?: string;
+    checklist?: { id?: string; title: string; completed?: boolean }[];
+    relatedCompanyId?: string;
+    relatedCompanyName?: string;
+    relatedLicenseId?: string;
+    notes?: string;
+  }): CRMTask {
+    const currentUser = this.getCurrentUser();
+    const newTask: CRMTask = {
+      id: `tsk-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      title: taskData.title.trim(),
+      description: taskData.description.trim(),
+      assignedToId: taskData.assignedToId,
+      assignedToName: taskData.assignedToName,
+      assignedToEmail: taskData.assignedToEmail,
+      assignedToRole: taskData.assignedToRole,
+      department: taskData.department,
+      createdById: currentUser?.id || 'usr-adm-01',
+      createdByName: currentUser?.name || 'Administrator',
+      createdByRole: currentUser?.role || 'administrator',
+      priority: taskData.priority,
+      status: 'todo',
+      category: taskData.category,
+      dueDate: taskData.dueDate,
+      dueTime: taskData.dueTime || '17:00',
+      checklist: (taskData.checklist || []).map((c, i) => ({
+        id: c.id || `chk-${Date.now()}-${i}`,
+        title: c.title,
+        completed: Boolean(c.completed),
+      })),
+      relatedCompanyId: taskData.relatedCompanyId,
+      relatedCompanyName: taskData.relatedCompanyName,
+      relatedLicenseId: taskData.relatedLicenseId,
+      notes: taskData.notes,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    this.tasks.unshift(newTask);
+    saveToStorage(STORAGE_KEYS.TASKS, this.tasks);
+    this.logAudit(
+      'CREATE',
+      'Daily Tasks',
+      `Assigned task "${newTask.title}" to ${newTask.assignedToName} (${newTask.priority.toUpperCase()})`
+    );
+    this.notify();
+    return newTask;
+  }
+
+  updateTask(id: string, updates: Partial<CRMTask>): CRMTask | null {
+    const index = this.tasks.findIndex((t) => t.id === id);
+    if (index === -1) return null;
+
+    const existing = this.tasks[index];
+    const updated: CRMTask = {
+      ...existing,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (updates.status === 'completed' && existing.status !== 'completed') {
+      const user = this.getCurrentUser();
+      updated.completedAt = new Date().toISOString();
+      updated.completedByName = user?.name || existing.assignedToName;
+    }
+
+    this.tasks[index] = updated;
+    saveToStorage(STORAGE_KEYS.TASKS, this.tasks);
+    this.logAudit('UPDATE', 'Daily Tasks', `Updated task "${updated.title}" status to ${updated.status}`);
+    this.notify();
+    return updated;
+  }
+
+  updateTaskStatus(id: string, status: TaskStatus): CRMTask | null {
+    return this.updateTask(id, { status });
+  }
+
+  toggleChecklistItem(taskId: string, checklistId: string): CRMTask | null {
+    const task = this.getTaskById(taskId);
+    if (!task) return null;
+
+    const checklist = task.checklist.map((c) =>
+      c.id === checklistId ? { ...c, completed: !c.completed } : c
+    );
+
+    const allDone = checklist.length > 0 && checklist.every((c) => c.completed);
+    return this.updateTask(taskId, {
+      checklist,
+      status: allDone ? 'completed' : task.status === 'completed' ? 'in_progress' : task.status,
+    });
+  }
+
+  deleteTask(id: string): boolean {
+    const task = this.getTaskById(id);
+    if (!task) return false;
+
+    this.tasks = this.tasks.filter((t) => t.id !== id);
+    saveToStorage(STORAGE_KEYS.TASKS, this.tasks);
+    this.logAudit('DELETE', 'Daily Tasks', `Deleted task "${task.title}"`);
+    this.notify();
+    return true;
+  }
+
+  // ─── Bitrix24 Centralized Document Vault ───────────────────────────────────
+  getVaultDocuments(): VaultDocument[] {
+    const user = this.getCurrentUser();
+    if (!user || (user.role !== 'super_admin' && user.role !== 'management')) {
+      return this.vaultDocuments.filter((d) => !d.confidential);
+    }
+    return [...this.vaultDocuments];
+  }
+
+  addVaultDocument(docData: {
+    title: string;
+    fileName: string;
+    fileSize: string;
+    fileFormat: string;
+    category: VaultDocumentCategory;
+    department: string;
+    companyName?: string;
+    licenseNumber?: string;
+    confidential: boolean;
+    description?: string;
+    downloadUrl?: string;
+  }): VaultDocument {
+    const currentUser = this.getCurrentUser();
+    const newDoc: VaultDocument = {
+      id: `doc-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      title: docData.title.trim(),
+      fileName: docData.fileName.trim(),
+      fileSize: docData.fileSize || '1.2 MB',
+      fileFormat: (docData.fileFormat || 'PDF').toUpperCase(),
+      category: docData.category,
+      department: docData.department,
+      companyName: docData.companyName,
+      licenseNumber: docData.licenseNumber,
+      uploadedByName: currentUser?.name || 'Administrator',
+      uploadedByEmail: currentUser?.email || 'admin@geominingec.com',
+      uploadedByRole: currentUser?.role || 'administrator',
+      uploadedAt: new Date().toISOString().substring(0, 10),
+      verified: true,
+      confidential: Boolean(docData.confidential),
+      description: docData.description,
+      downloadUrl: docData.downloadUrl || '#',
+    };
+
+    this.vaultDocuments.unshift(newDoc);
+    saveToStorage(STORAGE_KEYS.VAULT_DOCS, this.vaultDocuments);
+    this.logAudit('DOCUMENT_UPLOAD', 'Document Vault', `Archived document "${newDoc.title}" (${newDoc.category})`);
+    this.notify();
+    return newDoc;
+  }
+
+  deleteVaultDocument(id: string): boolean {
+    const doc = this.vaultDocuments.find((d) => d.id === id);
+    if (!doc) return false;
+
+    this.vaultDocuments = this.vaultDocuments.filter((d) => d.id !== id);
+    saveToStorage(STORAGE_KEYS.VAULT_DOCS, this.vaultDocuments);
+    this.logAudit('DELETE', 'Document Vault', `Removed vault document "${doc.title}"`);
+    this.notify();
+    return true;
+  }
+
+  // ─── Bitrix24 Internal Communication & Team Feed ───────────────────────────
+  getTeamMessages(): TeamMessage[] {
+    return [...this.teamMessages].sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return b.id.localeCompare(a.id);
+    });
+  }
+
+  addTeamMessage(msgData: {
+    title?: string;
+    content: string;
+    category: 'announcement' | 'operational' | 'urgent' | 'general';
+    isPinned?: boolean;
+  }): TeamMessage {
+    const user = this.getCurrentUser();
+    const newMsg: TeamMessage = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      authorId: user?.id || 'usr-adm-01',
+      authorName: user?.name || 'Authorized Personnel',
+      authorRole: user?.role || 'registry_department',
+      authorDepartment: user?.department || 'Operations',
+      title: msgData.title?.trim(),
+      content: msgData.content.trim(),
+      category: msgData.category,
+      isPinned: Boolean(msgData.isPinned),
+      likes: 0,
+      likedByUsers: [],
+      replies: [],
+      timestamp: `Today at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+    };
+
+    this.teamMessages.unshift(newMsg);
+    saveToStorage(STORAGE_KEYS.TEAM_MESSAGES, this.teamMessages);
+    this.logAudit(
+      'POST',
+      'Team Feed',
+      `Posted team broadcast: "${newMsg.title || newMsg.content.substring(0, 30)}..."`
+    );
+    this.notify();
+    return newMsg;
+  }
+
+  addMessageReply(messageId: string, content: string): TeamMessage | null {
+    const user = this.getCurrentUser();
+    const index = this.teamMessages.findIndex((m) => m.id === messageId);
+    if (index === -1) return null;
+
+    const reply: TeamMessageReply = {
+      id: `rep-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      authorId: user?.id || 'usr-reg-01',
+      authorName: user?.name || 'Authorized Personnel',
+      authorRole: user?.role || 'registry_department',
+      authorDepartment: user?.department || 'Operations',
+      content: content.trim(),
+      timestamp: `Today at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+    };
+
+    this.teamMessages[index].replies.push(reply);
+    saveToStorage(STORAGE_KEYS.TEAM_MESSAGES, this.teamMessages);
+    this.notify();
+    return this.teamMessages[index];
+  }
+
+  toggleLikeMessage(messageId: string): TeamMessage | null {
+    const user = this.getCurrentUser();
+    if (!user) return null;
+
+    const index = this.teamMessages.findIndex((m) => m.id === messageId);
+    if (index === -1) return null;
+
+    const msg = this.teamMessages[index];
+    const likedUsers = msg.likedByUsers || [];
+    const userKey = user.email.toLowerCase();
+    const hasLiked = likedUsers.includes(userKey);
+
+    if (hasLiked) {
+      msg.likedByUsers = likedUsers.filter((e) => e !== userKey);
+      msg.likes = Math.max(0, (msg.likes || 1) - 1);
+    } else {
+      msg.likedByUsers = [...likedUsers, userKey];
+      msg.likes = (msg.likes || 0) + 1;
+    }
+
+    this.teamMessages[index] = msg;
+    saveToStorage(STORAGE_KEYS.TEAM_MESSAGES, this.teamMessages);
+    this.notify();
+    return msg;
+  }
+
+  togglePinMessage(messageId: string): TeamMessage | null {
+    const index = this.teamMessages.findIndex((m) => m.id === messageId);
+    if (index === -1) return null;
+
+    this.teamMessages[index].isPinned = !this.teamMessages[index].isPinned;
+    saveToStorage(STORAGE_KEYS.TEAM_MESSAGES, this.teamMessages);
+    this.notify();
+    return this.teamMessages[index];
+  }
+
+  deleteTeamMessage(messageId: string): boolean {
+    const index = this.teamMessages.findIndex((m) => m.id === messageId);
+    if (index === -1) return false;
+
+    this.teamMessages.splice(index, 1);
+    saveToStorage(STORAGE_KEYS.TEAM_MESSAGES, this.teamMessages);
+    this.notify();
+    return true;
+  }
+
+  // ─── Bitrix24 Org Structure & Employee Performance ─────────────────────────
+  getDepartments(): DepartmentSummary[] {
+    return GMEC_DEPARTMENTS;
+  }
+
+  getEmployeePerformanceMetrics(): EmployeePerformanceMetric[] {
+    const today = new Date().toISOString().substring(0, 10);
+    return this.users.map((user) => {
+      const userTasks = this.tasks.filter(
+        (t) =>
+          t.assignedToId.toLowerCase() === user.id.toLowerCase() ||
+          t.assignedToEmail.toLowerCase() === user.email.toLowerCase()
+      );
+      const total = userTasks.length;
+      const completed = userTasks.filter((t) => t.status === 'completed').length;
+      const inProgress = userTasks.filter((t) => t.status === 'in_progress').length;
+      const review = userTasks.filter((t) => t.status === 'review').length;
+      const overdue = userTasks.filter((t) => t.status !== 'completed' && t.dueDate < today).length;
+      const completionRate = total > 0 ? Math.round((completed / total) * 100) : 100;
+      const onTimeRate = completed > 0 ? Math.max(75, 100 - overdue * 10) : 100;
+
+      // Count registered companies
+      const registeredCompanies = this.companies.filter(
+        (c) =>
+          c.registeredByName?.toLowerCase() === user.name.toLowerCase() ||
+          c.assignedOfficer?.toLowerCase() === user.name.toLowerCase()
+      ).length;
+
+      // Bitrix24 Efficiency Score formula
+      const efficiency = Math.min(
+        100,
+        Math.round(completionRate * 0.5 + onTimeRate * 0.3 + (registeredCompanies > 4 ? 20 : registeredCompanies * 5))
+      );
+
+      return {
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+        role: user.role,
+        department: user.department,
+        totalAssignedTasks: total,
+        completedTasks: completed,
+        inProgressTasks: inProgress,
+        reviewTasks: review,
+        overdueTasks: overdue,
+        completionRatePct: completionRate,
+        onTimeRatePct: onTimeRate,
+        efficiencyScore: Math.max(72, efficiency),
+        registeredCompaniesCount: registeredCompanies,
+        lastActive: user.lastLogin,
+      };
+    });
   }
 }
 

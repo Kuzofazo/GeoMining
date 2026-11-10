@@ -11,6 +11,10 @@ import { CRMCompliance } from '../components/crm/CRMCompliance';
 import { CRMClients } from '../components/crm/CRMClients';
 import { CRMReports } from '../components/crm/CRMReports';
 import { CRMSecurity } from '../components/crm/CRMSecurity';
+import { CRMTasks } from '../components/crm/CRMTasks';
+import { CRMEmployees } from '../components/crm/CRMEmployees';
+import { CRMDocumentVault } from '../components/crm/CRMDocumentVault';
+import { CRMTeamFeed } from '../components/crm/CRMTeamFeed';
 
 export const CRMPage: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<CRMUser | null>(() =>
@@ -57,10 +61,11 @@ export const CRMPage: React.FC = () => {
     };
   }, [currentUser]);
 
-  // Enforce tab access per role (e.g. if Registry Department, cannot access Security or Licenses)
+  // Enforce tab access per role
   useEffect(() => {
     if (!currentUser) return;
-    if (currentUser.role === 'registry_department' && activeTab !== 'dashboard' && activeTab !== 'companies') {
+    const registryAllowed = ['dashboard', 'companies', 'tasks', 'employees', 'documents', 'team_feed'];
+    if (currentUser.role === 'registry_department' && !registryAllowed.includes(activeTab)) {
       setActiveTab('dashboard');
     } else if (
       (currentUser.role === 'management' || currentUser.role === 'administrator') &&
@@ -128,6 +133,22 @@ export const CRMPage: React.FC = () => {
 
           {activeTab === 'companies' && (
             <CRMCompanies initialSearch={globalSearch} />
+          )}
+
+          {activeTab === 'tasks' && (
+            <CRMTasks initialSearch={globalSearch} />
+          )}
+
+          {activeTab === 'employees' && (
+            <CRMEmployees initialSearch={globalSearch} />
+          )}
+
+          {activeTab === 'documents' && (
+            <CRMDocumentVault initialSearch={globalSearch} />
+          )}
+
+          {activeTab === 'team_feed' && (
+            <CRMTeamFeed />
           )}
 
           {activeTab === 'licenses' && (
