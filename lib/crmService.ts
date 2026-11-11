@@ -387,16 +387,28 @@ class CRMStore {
   }
 
   private init() {
-    // Statutory migration: Clean all legacy cached records (companies, licenses, clients, notifications, comments) for fresh intake
-    const CADASTRE_DATA_VERSION = 'gmec_cadastre_v6_clean_all_records_2026';
+    // Statutory migration: Clean all legacy cached records and users for fresh official roster intake
+    const CADASTRE_DATA_VERSION = 'gmec_cadastre_v7_official_24_employees_roster_2026';
     if (typeof localStorage !== 'undefined') {
       const storedVersion = localStorage.getItem('gmec_cadastre_version');
       if (storedVersion !== CADASTRE_DATA_VERSION) {
+        localStorage.removeItem(STORAGE_KEYS.USERS);
         localStorage.removeItem(STORAGE_KEYS.COMPANIES);
         localStorage.removeItem(STORAGE_KEYS.LICENSES);
         localStorage.removeItem(STORAGE_KEYS.CLIENTS);
         localStorage.removeItem(STORAGE_KEYS.NOTIFICATIONS);
         localStorage.removeItem(STORAGE_KEYS.RECORD_COMMENTS);
+        localStorage.removeItem(STORAGE_KEYS.AUDIT_LOGS);
+        localStorage.removeItem(STORAGE_KEYS.TASKS);
+        localStorage.removeItem(STORAGE_KEYS.VAULT_DOCS);
+        localStorage.removeItem(STORAGE_KEYS.TEAM_MESSAGES);
+        localStorage.removeItem(STORAGE_KEYS.ACTIVE_SESSIONS);
+        localStorage.removeItem(STORAGE_KEYS.FAILED_LOGINS);
+        localStorage.removeItem(STORAGE_KEYS.SECURITY_ALERTS);
+        localStorage.removeItem(STORAGE_KEYS.ACCOUNT_LOCKOUTS);
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.removeItem(STORAGE_KEYS.SESSION);
+        }
         localStorage.setItem('gmec_cadastre_version', CADASTRE_DATA_VERSION);
       }
     }
@@ -410,24 +422,26 @@ class CRMStore {
     this.clients = loadFromStorage(STORAGE_KEYS.CLIENTS, INITIAL_CLIENTS);
     saveToStorage(STORAGE_KEYS.CLIENTS, this.clients);
 
-    // Load users and ensure official accounts from INITIAL_CRM_USERS are synced with correct credentials
-    const storedUsers = loadFromStorage<(CRMUser & { defaultPassword: string })[]>(STORAGE_KEYS.USERS, INITIAL_CRM_USERS);
+    // Strictly enforce the 24 official personnel accounts and purge ANY other mock/legacy users
+    const officialUserEmails = new Set(INITIAL_CRM_USERS.map((u) => u.email.toLowerCase()));
+    const storedUsers = loadFromStorage<(CRMUser & { defaultPassword: string })[]>(STORAGE_KEYS.USERS, []);
     const userMap = new Map<string, CRMUser & { defaultPassword: string }>();
+
+    // Seed purely from the 24 official accounts
     INITIAL_CRM_USERS.forEach((u) => userMap.set(u.email.toLowerCase(), { ...u }));
+
+    // Only allow status or lastLogin updates for official employees; all others are strictly discarded
     storedUsers.forEach((u) => {
-      const official = userMap.get(u.email.toLowerCase());
-      if (official) {
+      if (officialUserEmails.has(u.email.toLowerCase())) {
+        const official = userMap.get(u.email.toLowerCase())!;
         userMap.set(u.email.toLowerCase(), {
-          ...u,
-          defaultPassword: official.defaultPassword,
-          role: official.role,
-          name: official.name,
-          department: official.department,
+          ...official,
+          status: u.status || official.status,
+          lastLogin: u.lastLogin || official.lastLogin,
         });
-      } else {
-        userMap.set(u.email.toLowerCase(), u);
       }
     });
+
     this.users = Array.from(userMap.values());
     saveToStorage(STORAGE_KEYS.USERS, this.users);
 
@@ -442,12 +456,33 @@ class CRMStore {
     this.vaultDocuments = loadFromStorage(STORAGE_KEYS.VAULT_DOCS, INITIAL_VAULT_DOCUMENTS);
     this.teamMessages = loadFromStorage(STORAGE_KEYS.TEAM_MESSAGES, INITIAL_TEAM_MESSAGES);
 
-    // Load active session user if present
+    // Load active session user if present and verify against official roster
     try {
       const storedSession = sessionStorage.getItem(STORAGE_KEYS.SESSION);
       if (storedSession) {
-        this.currentUser = JSON.parse(storedSession);
-        this.touchSessionActivity();
+        const parsed = JSON.parse(storedSession);
+        const matched = this.users.find(
+          (u) => u.email.toLowerCase() === parsed?.email?.toLowerCase()
+        );
+        if (matched) {
+          this.currentUser = {
+            id: matched.id,
+            name: matched.name,
+            email: matched.email,
+            role: matched.role,
+            department: matched.department,
+            position: matched.position,
+            employeeId: matched.employeeId,
+            phone: matched.phone,
+            status: matched.status,
+            lastLogin: parsed.lastLogin || matched.lastLogin,
+          };
+          sessionStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(this.currentUser));
+          this.touchSessionActivity();
+        } else {
+          sessionStorage.removeItem(STORAGE_KEYS.SESSION);
+          this.currentUser = null;
+        }
       }
     } catch {
       this.currentUser = null;
@@ -591,6 +626,8 @@ class CRMStore {
       email: user.email,
       role: user.role,
       department: user.department,
+      position: user.position,
+      employeeId: user.employeeId,
       phone: user.phone,
       status: user.status,
       lastLogin: new Date().toISOString().replace('T', ' ').substring(0, 16),
@@ -844,6 +881,8 @@ class CRMStore {
       email: targetUser.email,
       role: targetUser.role,
       department: targetUser.department,
+      position: targetUser.position,
+      employeeId: targetUser.employeeId,
       phone: targetUser.phone,
       status: targetUser.status,
       lastLogin: new Date().toISOString().replace('T', ' ').substring(0, 16),
@@ -1084,7 +1123,7 @@ class CRMStore {
         this.addNotification({
           type: 'warning',
           title: 'New Company Pending Statutory Approval',
-          message: `Officer ${this.currentUser?.name} (${this.currentUser?.email}) registered "${committedCompany.companyName}" (${committedCompany.registrationNumber}). Awaiting statutory authorization by either the Executive Director (Carlos Etingban) or Registry Department Boss (E. Myers).`,
+          message: `Officer ${this.currentUser?.name} (${this.currentUser?.email}) registered "${committedCompany.companyName}" (${committedCompany.registrationNumber}). Awaiting statutory authorization by either the Executive Director (Carlos E. Tingban, Sr.) or Registry Department Boss (Eric S. Myers).`,
           relatedModule: 'Company Registration',
           relatedId: committedCompany.id,
         });
@@ -1938,7 +1977,7 @@ class CRMStore {
       assignedToEmail: taskData.assignedToEmail,
       assignedToRole: taskData.assignedToRole,
       department: taskData.department,
-      createdById: currentUser?.id || 'usr-adm-01',
+      createdById: currentUser?.id || 'Gmec-002',
       createdByName: currentUser?.name || 'Administrator',
       createdByRole: currentUser?.role || 'administrator',
       priority: taskData.priority,
@@ -2103,7 +2142,7 @@ class CRMStore {
     const user = this.getCurrentUser();
     const newMsg: TeamMessage = {
       id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      authorId: user?.id || 'usr-adm-01',
+      authorId: user?.id || 'Gmec-002',
       authorName: user?.name || 'Authorized Personnel',
       authorRole: user?.role || 'registry_department',
       authorDepartment: user?.department || 'Operations',
@@ -2135,7 +2174,7 @@ class CRMStore {
 
     const reply: TeamMessageReply = {
       id: `rep-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      authorId: user?.id || 'usr-reg-01',
+      authorId: user?.id || 'Gmec-006',
       authorName: user?.name || 'Authorized Personnel',
       authorRole: user?.role || 'registry_department',
       authorDepartment: user?.department || 'Operations',
@@ -2235,6 +2274,8 @@ class CRMStore {
         userEmail: user.email,
         role: user.role,
         department: user.department,
+        position: user.position,
+        employeeId: user.employeeId,
         totalAssignedTasks: total,
         completedTasks: completed,
         inProgressTasks: inProgress,

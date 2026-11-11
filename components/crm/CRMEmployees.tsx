@@ -183,10 +183,14 @@ export const CRMEmployees: React.FC<CRMEmployeesProps> = ({ initialSearch = '' }
               className="w-full sm:w-auto px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:outline-none"
             >
               <option value="all">All Departments ({performanceMetrics.length} Staff)</option>
-              <option value="Executive">Executive Directorate</option>
-              <option value="Super Admin">IT Infrastructure</option>
-              <option value="Registry">Registry Department</option>
-              <option value="Concession">System Administration</option>
+              <option value="Executive Directorate">Executive Directorate</option>
+              <option value="Administration">Administration</option>
+              <option value="IT & Infrastructure">IT & Infrastructure</option>
+              <option value="Registry Department">Registry Department</option>
+              <option value="Mining Engineering">Mining Engineering & Geology</option>
+              <option value="Environmental">Environmental & Compliance</option>
+              <option value="Field Operations">Field Operations</option>
+              <option value="Security">Security & Operations</option>
             </select>
           </div>
 
@@ -210,8 +214,18 @@ export const CRMEmployees: React.FC<CRMEmployeesProps> = ({ initialSearch = '' }
                             .join('')}
                         </div>
                         <div>
-                          <h4 className="font-bold text-slate-900 text-sm leading-tight">{emp.userName}</h4>
-                          <span className="text-[11px] text-slate-500 block">{emp.userEmail}</span>
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-black bg-slate-100 text-slate-700 border border-slate-200">
+                              {emp.employeeId || userObj?.employeeId || emp.userId}
+                            </span>
+                            <h4 className="font-bold text-slate-900 text-sm leading-tight">{emp.userName}</h4>
+                          </div>
+                          {(emp.position || userObj?.position) && (
+                            <span className="text-[11px] font-bold text-[#2a602f] block leading-tight">
+                              {emp.position || userObj?.position}
+                            </span>
+                          )}
+                          <span className="text-[10px] text-slate-400 block font-mono">{emp.userEmail}</span>
                         </div>
                       </div>
                       {getRoleBadge(emp.role)}

@@ -14,6 +14,8 @@ export interface CRMUser {
   email: string;
   role: UserRole;
   department: string;
+  position?: string;
+  employeeId?: string;
   avatar?: string;
   phone?: string;
   status: 'active' | 'suspended';
@@ -485,6 +487,8 @@ export interface EmployeePerformanceMetric {
   userEmail: string;
   role: UserRole;
   department: string;
+  position?: string;
+  employeeId?: string;
   totalAssignedTasks: number;
   completedTasks: number;
   inProgressTasks: number;

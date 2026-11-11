@@ -124,7 +124,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
     primaryPhone: '',
     entityType: 'Corporation' as EntityType,
     status: 'under_review' as RegistrationStatus,
-    assignedOfficer: 'Helena K. Flomo',
+    assignedOfficer: 'Eric S. Myers',
     notes: '',
     directorNationality: 'Liberian',
   });
@@ -277,7 +277,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
       primaryPhone: '',
       entityType: 'Corporation',
       status: 'under_review',
-      assignedOfficer: 'Helena K. Flomo',
+      assignedOfficer: 'Eric S. Myers',
       notes: '',
       directorNationality: 'Liberian',
     });
@@ -419,7 +419,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                 </span>
               </div>
               <p className="text-xs text-slate-600 mt-0.5 font-medium">
-                Companies registered by Registry Department officers require official statutory authorization from either the <strong>Executive Director (Carlos Etingban)</strong> or the <strong>Registry Department Boss (E. Myers - emyers@geominingec.com)</strong>.
+                Companies registered by Registry Department officers require official statutory authorization from either the <strong>Executive Director (Carlos E. Tingban, Sr.)</strong> or the <strong>Registry Department Boss (Eric S. Myers - emyers@geominingec.com)</strong>.
               </p>
             </div>
           </div>
@@ -444,7 +444,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                 Registry Department Corporate Intake
               </span>
               <p className="text-xs text-slate-600 mt-0.5 font-medium">
-                New company intake records are placed <strong>Under Review</strong> and routed to either the <strong>Executive Director (Carlos Etingban)</strong> or <strong>Registry Department Boss (E. Myers)</strong> for statutory authorization.
+                New company intake records are placed <strong>Under Review</strong> and routed to either the <strong>Executive Director (Carlos E. Tingban, Sr.)</strong> or <strong>Registry Department Boss (Eric S. Myers)</strong> for statutory authorization.
               </p>
             </div>
           </div>
@@ -489,14 +489,14 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                   className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
                 >
                   <option value="all">All Submitting Officers ({companies.length})</option>
-                  <option value="E. Myers">E. Myers (Registry Boss)</option>
-                  <option value="C. Mulbah">C. Mulbah (Registry Dept)</option>
-                  <option value="A. Cooper">A. Cooper (Registry Dept)</option>
-                  <option value="R. Warner">R. Warner (Registry Dept)</option>
-                  <option value="Z. Wleh">Z. Wleh (Registry Dept)</option>
-                  <option value="E. Appleton">E. Appleton (Registry Dept)</option>
+                  <option value="Eric S. Myers">Eric S. Myers (Lead License Registrar)</option>
+                  <option value="Comfort K.L. Mulbah">Comfort K.L. Mulbah (Documents Agent)</option>
+                  <option value="Alvin G. Cooper">Alvin G. Cooper (License Registrar)</option>
+                  <option value="Rex Warner">Rex Warner (Documents Agent)</option>
+                  <option value="Zuala Kofa Wleh">Zuala Kofa Wleh (License Registrar)</option>
+                  <option value="Eric S. Appleton">Eric S. Appleton (License Registrar)</option>
                   {submittingOfficers
-                    .filter((n) => !['E. Myers', 'C. Mulbah', 'A. Cooper', 'R. Warner', 'Z. Wleh', 'E. Appleton'].some((k) => n.includes(k)))
+                    .filter((n) => !['Eric S. Myers', 'Comfort K.L. Mulbah', 'Alvin G. Cooper', 'Rex Warner', 'Zuala Kofa Wleh', 'Eric S. Appleton'].some((k) => n.includes(k)))
                     .map((name) => (
                       <option key={name} value={name}>{name}</option>
                     ))}
@@ -736,7 +736,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                                 isExecutiveDirector
                                   ? 'Approve as Executive Director'
                                   : isRegistryBoss
-                                  ? 'Approve as Registry Department Boss (E. Myers)'
+                                  ? 'Approve as Registry Department Boss (Eric S. Myers)'
                                   : 'Approve as Super Admin'
                               }
                             >
@@ -883,7 +883,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                 <div className="flex items-center gap-2">
                   <div className="text-[11px] text-amber-800 font-semibold flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
                     <Clock size={13} className="text-amber-700" />
-                    <span>Awaiting authorization by either the Executive Director (Carlos Etingban) or Registry Department Boss (E. Myers)</span>
+                    <span>Awaiting authorization by either the Executive Director (Carlos E. Tingban, Sr.) or Registry Department Boss (Eric S. Myers)</span>
                   </div>
                 </div>
               )}
@@ -924,7 +924,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                       </div>
                       <div className="text-xs text-amber-900 font-medium mt-0.5">
                         {selectedCompany.registeredByName ? `Submitted by ${selectedCompany.registeredByName}. ` : ''}
-                        Corporate registration records added by Registry Department officers must be authorized by either the <strong>Executive Director (Carlos Etingban)</strong> or the <strong>Registry Department Boss (E. Myers - emyers@geominingec.com)</strong>.
+                        Corporate registration records added by Registry Department officers must be authorized by either the <strong>Executive Director (Carlos E. Tingban, Sr.)</strong> or the <strong>Registry Department Boss (Eric S. Myers - emyers@geominingec.com)</strong>.
                       </div>
                     </div>
                   </div>
@@ -1017,7 +1017,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                           <span>Awaiting Authorization</span>
                         </div>
                         <div className="text-[10px] text-amber-700 mt-0.5">
-                          Executive Director or Registry Boss (E. Myers)
+                          Executive Director or Registry Boss (Eric S. Myers)
                         </div>
                         <div className="text-[9px] font-bold text-slate-400 mt-1">
                           Action Required before activation
@@ -1562,7 +1562,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                   <div className="text-xs text-amber-950">
                     <span className="font-black uppercase tracking-wider block">Statutory Executive Approval Required</span>
                     <span className="text-amber-900 mt-0.5 block">
-                      This company record will be submitted <strong>Under Review</strong>. Official cadastre approval must be authorized by either the <strong>Executive Director (Carlos Etingban)</strong> or the <strong>Registry Department Boss (E. Myers)</strong> before becoming active.
+                      This company record will be submitted <strong>Under Review</strong>. Official cadastre approval must be authorized by either the <strong>Executive Director (Carlos E. Tingban, Sr.)</strong> or the <strong>Registry Department Boss (Eric S. Myers)</strong> before becoming active.
                     </span>
                   </div>
                 </div>

@@ -148,65 +148,44 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
     { month: 'Jul', progress: 88, height: 88 },
   ];
 
-  // Official GMEC Team Members
-  const teamMembers = [
-    {
-      initials: 'DB',
-      name: 'Daniel Bofosu Jr.',
-      role: 'Super Admin / IT Infrastructure',
-      status: 'ACTIVE',
-      statusColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-      avatarBg: 'bg-indigo-600',
-    },
-    {
-      initials: 'CE',
-      name: 'Carlos Etingban',
-      role: 'Executive Director',
-      status: 'ACTIVE',
-      statusColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-      avatarBg: 'bg-blue-600',
-    },
-    {
-      initials: 'ZT',
-      name: 'Z. Teewu',
-      role: 'System & Concession Admin',
-      status: 'IN MEETING',
-      statusColor: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
-      avatarBg: 'bg-purple-600',
-    },
-    {
-      initials: 'EM',
-      name: 'E. Myers',
-      role: 'Registry Department Head',
-      status: 'ACTIVE',
-      statusColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-      avatarBg: 'bg-emerald-600',
-    },
-    {
-      initials: 'KM',
-      name: 'Emmanuel K. Myers',
-      role: 'Statutory Compliance Officer',
-      status: 'IN FIELD',
-      statusColor: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-      avatarBg: 'bg-amber-600',
-    },
-    {
-      initials: 'EA',
-      name: 'E. Appleton',
-      role: 'Registry Department Officer',
-      status: 'ACTIVE',
-      statusColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-      avatarBg: 'bg-teal-600',
-    },
-    {
-      initials: 'CM',
-      name: 'C. Mulbah',
-      role: 'Registry Department Officer',
-      status: 'ON LEAVE',
-      statusColor: 'bg-slate-500/10 text-slate-400 border-slate-500/30',
-      avatarBg: 'bg-slate-700',
-    },
-  ];
+  // Official GMEC Team Members (Synchronized with 24-Person Official Roster)
+  const officialUsers = crmService.getUsers();
+  const teamMembers = officialUsers.map((u, i) => {
+    const initials =
+      u.name
+        .split(' ')
+        .filter((part) => part.length > 0 && !part.includes('.'))
+        .map((part) => part[0])
+        .slice(0, 2)
+        .join('') || u.name.substring(0, 2).toUpperCase();
+
+    const avatarBgs = [
+      'bg-blue-600',
+      'bg-indigo-600',
+      'bg-purple-600',
+      'bg-emerald-600',
+      'bg-teal-600',
+      'bg-amber-600',
+      'bg-cyan-600',
+    ];
+
+    const isFieldRole =
+      u.department.toLowerCase().includes('field') ||
+      u.department.toLowerCase().includes('geology') ||
+      (u.position && u.position.toLowerCase().includes('geologist'));
+
+    return {
+      initials,
+      name: u.name,
+      role: u.position || u.department,
+      employeeId: u.employeeId || u.id,
+      status: u.status === 'suspended' ? 'SUSPENDED' : isFieldRole ? 'IN FIELD' : 'ACTIVE',
+      statusColor: isFieldRole
+        ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+      avatarBg: avatarBgs[i % avatarBgs.length],
+    };
+  });
 
   // Filter tasks for Recent Activities
   const filteredActivities = allTasks.filter((t) => {
@@ -711,7 +690,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
 
           <div className="pt-4 mt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
             <span>Official GMEC Roster</span>
-            <span className="text-slate-200 font-bold">11 Staff Accounts Active</span>
+            <span className="text-slate-200 font-bold">{officialUsers.length} Staff Accounts Active</span>
           </div>
         </div>
       </div>

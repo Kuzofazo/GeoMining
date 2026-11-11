@@ -639,9 +639,17 @@ export const CRMSecurity: React.FC = () => {
                             {u.name.substring(0, 1)}
                           </div>
                           <div>
-                            <div className="font-bold text-slate-900 text-xs sm:text-sm">
-                              {u.name} {isCurrent && <span className="text-[10px] text-emerald-700 font-bold">(You)</span>}
+                            <div className="flex items-center gap-1.5">
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-black bg-slate-100 text-slate-700 border border-slate-200">
+                                {u.employeeId || u.id}
+                              </span>
+                              <div className="font-bold text-slate-900 text-xs sm:text-sm">
+                                {u.name} {isCurrent && <span className="text-[10px] text-emerald-700 font-bold">(You)</span>}
+                              </div>
                             </div>
+                            {u.position && (
+                              <div className="text-[10px] font-bold text-[#2a602f]">{u.position}</div>
+                            )}
                             <div className="text-[10px] text-slate-400">{u.phone || 'Direct extension'}</div>
                           </div>
                         </div>
