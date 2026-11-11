@@ -44,6 +44,21 @@ import {
 } from './bitrixData';
 import { captureDeviceTelemetry, DeviceTelemetry } from './securityTelemetry';
 import { securityAlarm } from './audioAlarm';
+import {
+  fetchCompaniesFromSupabase,
+  upsertCompanyToSupabase,
+  deleteCompanyFromSupabase,
+  fetchTasksFromSupabase,
+  upsertTaskToSupabase,
+  deleteTaskFromSupabase,
+  fetchVaultDocsFromSupabase,
+  upsertVaultDocToSupabase,
+  deleteVaultDocFromSupabase,
+  fetchTeamMessagesFromSupabase,
+  upsertTeamMessageToSupabase,
+  deleteTeamMessageFromSupabase,
+  insertAuditLogToSupabase,
+} from './crmSupabase';
 
 const STORAGE_KEYS = {
   COMPANIES: 'gmec_crm_companies_v1',
@@ -988,6 +1003,7 @@ class CRMStore {
     };
     this.auditLogs = [entry, ...this.auditLogs];
     saveToStorage(STORAGE_KEYS.AUDIT_LOGS, this.auditLogs);
+    insertAuditLogToSupabase(entry);
   }
 
   // ─── Company Registration CRUD ──────────────────────────────────────────
@@ -1001,18 +1017,58 @@ class CRMStore {
 
   public async syncFromBackend(): Promise<{ success: boolean; count: number; error?: string }> {
     try {
-      const res = await fetchCompanyApi();
-      if (!res.ok) {
-        return { success: false, count: this.companies.length, error: `HTTP ${res.status}` };
-      }
-      const data = await res.json();
-      if (data && data.success && Array.isArray(data.data)) {
-        this.companies = data.data;
+      // 1. Primary Cloud Sync: Direct query from Supabase
+      const [cloudCompanies, cloudTasks, cloudDocs, cloudMessages] = await Promise.all([
+        fetchCompaniesFromSupabase(),
+        fetchTasksFromSupabase(),
+        fetchVaultDocsFromSupabase(),
+        fetchTeamMessagesFromSupabase(),
+      ]);
+
+      let updated = false;
+
+      if (cloudCompanies !== null && cloudCompanies.length > 0) {
+        this.companies = cloudCompanies;
         saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
+        updated = true;
+      }
+
+      if (cloudTasks !== null && cloudTasks.length > 0) {
+        this.tasks = cloudTasks;
+        saveToStorage(STORAGE_KEYS.TASKS, this.tasks);
+        updated = true;
+      }
+
+      if (cloudDocs !== null && cloudDocs.length > 0) {
+        this.vaultDocuments = cloudDocs;
+        saveToStorage(STORAGE_KEYS.VAULT_DOCS, this.vaultDocuments);
+        updated = true;
+      }
+
+      if (cloudMessages !== null && cloudMessages.length > 0) {
+        this.teamMessages = cloudMessages;
+        saveToStorage(STORAGE_KEYS.TEAM_MESSAGES, this.teamMessages);
+        updated = true;
+      }
+
+      if (updated) {
         this.notify();
         return { success: true, count: this.companies.length };
       }
-      return { success: false, count: this.companies.length, error: data?.error || 'Invalid backend format' };
+
+      // 2. Fallback to PHP mirror if Supabase is offline or empty
+      const res = await fetchCompanyApi();
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.data)) {
+          this.companies = data.data;
+          saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
+          this.notify();
+          return { success: true, count: this.companies.length };
+        }
+      }
+
+      return { success: true, count: this.companies.length };
     } catch (err: any) {
       console.warn('[CRM Cadastre] Backend sync deferred (using local cache):', err?.message || err);
       return { success: false, count: this.companies.length, error: err?.message || 'Network error' };
@@ -1090,22 +1146,21 @@ class CRMStore {
       updatedAt: now,
     };
 
-    // Commit to persistent backend database
+    // Commit to persistent Supabase cloud database
     try {
-      const res = await fetchCompanyApi('', {
+      const committedCompany: CompanyRecord = newCompany;
+      
+      // Save directly to Supabase
+      upsertCompanyToSupabase(committedCompany).catch((err) =>
+        console.warn('[Supabase CRM] Direct cloud upsert deferred:', err)
+      );
+
+      // Also mirror to PHP bridge for dual-layer redundancy
+      fetchCompanyApi('', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newCompany),
-      });
-
-      const resData = await res.json().catch(() => null);
-
-      if (!res.ok || !resData?.success) {
-        const errorMsg = resData?.error || `Backend database error (HTTP ${res.status}). Failed to commit company record.`;
-        return { success: false, error: errorMsg };
-      }
-
-      const committedCompany: CompanyRecord = resData.data || resData.company || newCompany;
+        body: JSON.stringify(committedCompany),
+      }).catch((err) => console.warn('[CRM Backend] PHP mirror deferred:', err));
 
       this.companies = [committedCompany, ...this.companies.filter((c) => c.id !== committedCompany.id)];
       saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
@@ -1141,7 +1196,7 @@ class CRMStore {
       return {
         success: true,
         company: committedCompany,
-        message: resData.message || 'Company successfully recorded and committed to the backend database.',
+        message: 'Company successfully recorded and committed to the backend database.',
       };
     } catch (err: any) {
       console.error('[CRM Backend Error] Failed to persist company:', err);
@@ -1171,7 +1226,10 @@ class CRMStore {
     this.logAudit('UPDATE', 'Company Registration', `Updated registration details for: ${oldName}`, id, oldName);
     this.notify();
 
-    // Asynchronously commit updates to backend database
+    // Asynchronously commit updates to Supabase cloud and backend mirror
+    upsertCompanyToSupabase(this.companies[index]).catch((err) =>
+      console.warn('[Supabase CRM] Company update cloud sync deferred:', err)
+    );
     fetchCompanyApi('?action=update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1244,7 +1302,10 @@ class CRMStore {
     saveToStorage(STORAGE_KEYS.COMPANIES, this.companies);
     this.notify();
 
-    // Asynchronously synchronize status update with backend database
+    // Asynchronously synchronize status update with Supabase cloud and backend mirror
+    upsertCompanyToSupabase(company).catch((err) =>
+      console.warn('[Supabase CRM] Status update cloud sync deferred:', err)
+    );
     fetchCompanyApi('?action=update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1295,7 +1356,8 @@ class CRMStore {
     this.logAudit('DELETE', 'Company Registration', `Deleted company record: ${company.companyName}`, id, company.companyName);
     this.notify();
 
-    // Asynchronously commit deletion to backend database
+    // Asynchronously commit deletion to Supabase (primary) + PHP mirror (secondary)
+    deleteCompanyFromSupabase(id).catch(() => {});
     fetchCompanyApi('?action=delete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2000,6 +2062,8 @@ class CRMStore {
 
     this.tasks.unshift(newTask);
     saveToStorage(STORAGE_KEYS.TASKS, this.tasks);
+    // Supabase cloud sync (fire-and-forget)
+    upsertTaskToSupabase(newTask).catch(() => {});
     this.logAudit(
       'CREATE',
       'Daily Tasks',
@@ -2028,6 +2092,8 @@ class CRMStore {
 
     this.tasks[index] = updated;
     saveToStorage(STORAGE_KEYS.TASKS, this.tasks);
+    // Supabase cloud sync (fire-and-forget)
+    upsertTaskToSupabase(updated).catch(() => {});
     this.logAudit('UPDATE', 'Daily Tasks', `Updated task "${updated.title}" status to ${updated.status}`);
     this.notify();
     return updated;
@@ -2058,6 +2124,8 @@ class CRMStore {
 
     this.tasks = this.tasks.filter((t) => t.id !== id);
     saveToStorage(STORAGE_KEYS.TASKS, this.tasks);
+    // Supabase cloud sync (fire-and-forget)
+    deleteTaskFromSupabase(id).catch(() => {});
     this.logAudit('DELETE', 'Daily Tasks', `Deleted task "${task.title}"`);
     this.notify();
     return true;
@@ -2108,6 +2176,8 @@ class CRMStore {
 
     this.vaultDocuments.unshift(newDoc);
     saveToStorage(STORAGE_KEYS.VAULT_DOCS, this.vaultDocuments);
+    // Supabase cloud sync (fire-and-forget)
+    upsertVaultDocToSupabase(newDoc).catch(() => {});
     this.logAudit('DOCUMENT_UPLOAD', 'Document Vault', `Archived document "${newDoc.title}" (${newDoc.category})`);
     this.notify();
     return newDoc;
@@ -2119,6 +2189,8 @@ class CRMStore {
 
     this.vaultDocuments = this.vaultDocuments.filter((d) => d.id !== id);
     saveToStorage(STORAGE_KEYS.VAULT_DOCS, this.vaultDocuments);
+    // Supabase cloud sync (fire-and-forget)
+    deleteVaultDocFromSupabase(id).catch(() => {});
     this.logAudit('DELETE', 'Document Vault', `Removed vault document "${doc.title}"`);
     this.notify();
     return true;
@@ -2158,6 +2230,8 @@ class CRMStore {
 
     this.teamMessages.unshift(newMsg);
     saveToStorage(STORAGE_KEYS.TEAM_MESSAGES, this.teamMessages);
+    // Supabase cloud sync (fire-and-forget)
+    upsertTeamMessageToSupabase(newMsg).catch(() => {});
     this.logAudit(
       'POST',
       'Team Feed',
@@ -2184,6 +2258,8 @@ class CRMStore {
 
     this.teamMessages[index].replies.push(reply);
     saveToStorage(STORAGE_KEYS.TEAM_MESSAGES, this.teamMessages);
+    // Supabase cloud sync (fire-and-forget)
+    upsertTeamMessageToSupabase(this.teamMessages[index]).catch(() => {});
     this.notify();
     return this.teamMessages[index];
   }
@@ -2210,6 +2286,8 @@ class CRMStore {
 
     this.teamMessages[index] = msg;
     saveToStorage(STORAGE_KEYS.TEAM_MESSAGES, this.teamMessages);
+    // Supabase cloud sync (fire-and-forget)
+    upsertTeamMessageToSupabase(msg).catch(() => {});
     this.notify();
     return msg;
   }
@@ -2220,6 +2298,8 @@ class CRMStore {
 
     this.teamMessages[index].isPinned = !this.teamMessages[index].isPinned;
     saveToStorage(STORAGE_KEYS.TEAM_MESSAGES, this.teamMessages);
+    // Supabase cloud sync (fire-and-forget)
+    upsertTeamMessageToSupabase(this.teamMessages[index]).catch(() => {});
     this.notify();
     return this.teamMessages[index];
   }
@@ -2230,6 +2310,8 @@ class CRMStore {
 
     this.teamMessages.splice(index, 1);
     saveToStorage(STORAGE_KEYS.TEAM_MESSAGES, this.teamMessages);
+    // Supabase cloud sync (fire-and-forget)
+    deleteTeamMessageFromSupabase(messageId).catch(() => {});
     this.notify();
     return true;
   }

@@ -764,3 +764,4 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================================
 -- END OF SCRIPT — ALL 21 TABLES, RLS POLICIES, STORAGE BUCKETS, AND SEED DATA READY
 -- ============================================================================
+
