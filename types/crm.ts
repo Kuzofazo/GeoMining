@@ -431,12 +431,14 @@ export type VaultDocumentCategory =
   | 'Standard Operating Procedure (SOP)'
   | 'Legal Agreement';
 
+export type VaultScanSource = 'phone_camera' | 'printer_scanner' | 'file_upload';
+
 export interface VaultDocument {
   id: string;
   title: string;
   fileName: string;
   fileSize: string;
-  fileFormat: string; // e.g. 'PDF', 'DOCX', 'XLSX', 'GEOJSON'
+  fileFormat: string; // e.g. 'PDF', 'PNG', 'JPG', 'DOCX', 'XLSX', 'GEOJSON'
   category: VaultDocumentCategory;
   department: string;
   companyName?: string;
@@ -449,6 +451,12 @@ export interface VaultDocument {
   confidential: boolean;
   description?: string;
   downloadUrl?: string;
+  // Scan feature extensions
+  scanSource?: VaultScanSource;
+  scanDevice?: string;
+  pagesCount?: number;
+  fileData?: string; // High-res Data URL / Base64 for instant preview & download
+  ocrExtractedText?: string;
 }
 
 // ─── Bitrix24-Style Internal Communication & Team Feed ────────────────────────

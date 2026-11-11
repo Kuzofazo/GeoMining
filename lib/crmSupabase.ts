@@ -174,6 +174,11 @@ export function docToRow(d: VaultDocument): Record<string, any> {
     confidential: Boolean(d.confidential),
     description: d.description || null,
     download_url: d.downloadUrl || '#',
+    scan_source: d.scanSource || 'file_upload',
+    scan_device: d.scanDevice || null,
+    pages_count: d.pagesCount || 1,
+    file_data: d.fileData || null,
+    ocr_extracted_text: d.ocrExtractedText || null,
   };
 }
 
@@ -196,6 +201,11 @@ export function rowToDoc(r: any): VaultDocument {
     confidential: Boolean(r.confidential),
     description: r.description || undefined,
     downloadUrl: r.download_url || '#',
+    scanSource: r.scan_source || undefined,
+    scanDevice: r.scan_device || undefined,
+    pagesCount: r.pages_count || 1,
+    fileData: r.file_data || undefined,
+    ocrExtractedText: r.ocr_extracted_text || undefined,
   };
 }
 

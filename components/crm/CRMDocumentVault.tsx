@@ -16,9 +16,15 @@ import {
   AlertCircle,
   FileSpreadsheet,
   FileCode,
+  Camera,
+  Printer,
+  X,
+  Maximize2,
+  RotateCw,
 } from 'lucide-react';
 import { crmService } from '../../lib/crmService';
 import { VaultDocument, VaultDocumentCategory } from '../../types/crm';
+import { CRMDocumentScannerModal } from './CRMDocumentScannerModal';
 
 interface CRMDocumentVaultProps {
   initialSearch?: string;
@@ -29,6 +35,9 @@ export const CRMDocumentVault: React.FC<CRMDocumentVaultProps> = ({ initialSearc
   const [searchQuery, setSearchQuery] = useState<string>(initialSearch);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
+  const [showScannerModal, setShowScannerModal] = useState<boolean>(false);
+  const [previewDoc, setPreviewDoc] = useState<VaultDocument | null>(null);
+  const [previewRotation, setPreviewRotation] = useState<number>(0);
 
   // Form State
   const [newTitle, setNewTitle] = useState('');
@@ -57,6 +66,9 @@ export const CRMDocumentVault: React.FC<CRMDocumentVaultProps> = ({ initialSearc
       (doc.description && doc.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
     if (!matchesSearch) return false;
+    if (categoryFilter === 'scanned_only') {
+      return Boolean(doc.scanSource || doc.fileData);
+    }
     if (categoryFilter !== 'all' && doc.category !== categoryFilter) return false;
 
     return true;
@@ -134,13 +146,26 @@ export const CRMDocumentVault: React.FC<CRMDocumentVaultProps> = ({ initialSearc
           </p>
         </div>
 
-        <button
-          onClick={() => setShowUploadModal(true)}
-          className="px-4 py-2.5 rounded-xl bg-[#2a602f] hover:bg-[#224f26] text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
-        >
-          <Plus size={16} />
-          <span>Upload Document</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setShowScannerModal(true)}
+            className="px-4 py-2.5 rounded-xl bg-[#2a602f] hover:bg-[#224f26] text-[#ffc30d] font-black text-xs flex items-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer uppercase tracking-wider"
+            title="Scan physical documents directly using your phone camera or office printer scanner"
+          >
+            <Camera size={16} />
+            <span>Scan Document</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowUploadModal(true)}
+            className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer"
+          >
+            <Plus size={16} />
+            <span>Upload File</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
@@ -162,6 +187,7 @@ export const CRMDocumentVault: React.FC<CRMDocumentVaultProps> = ({ initialSearc
           className="w-full md:w-auto px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:outline-none"
         >
           <option value="all">All Document Categories ({documents.length})</option>
+          <option value="scanned_only">📷 Scanned Documents Only ({documents.filter(d => d.scanSource || d.fileData).length})</option>
           <option value="Articles of Incorporation">Articles of Incorporation</option>
           <option value="Mining Concession Deed">Mining Concession Deed</option>
           <option value="EPA Clearance">EPA Clearance</option>
@@ -194,6 +220,12 @@ export const CRMDocumentVault: React.FC<CRMDocumentVaultProps> = ({ initialSearc
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex items-center gap-2">
                     {getFormatBadge(doc.fileFormat)}
+                    {doc.scanSource && (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
+                        {doc.scanSource === 'phone_camera' ? <Camera size={10} /> : <Printer size={10} />}
+                        <span>{doc.scanSource === 'phone_camera' ? 'Phone Scan' : 'Printer Scan'}</span>
+                      </span>
+                    )}
                     {doc.confidential && (
                       <span className="px-2 py-0.5 rounded text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
                         <Lock size={10} /> Confidential
@@ -234,22 +266,41 @@ export const CRMDocumentVault: React.FC<CRMDocumentVaultProps> = ({ initialSearc
               </div>
 
               <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
-                <a
-                  href={`#download-${doc.id}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    alert(`Initiating verified download for: ${doc.fileName}`);
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-all"
-                >
-                  <Download size={13} />
-                  <span>Download</span>
-                </a>
+                <div className="flex items-center gap-2">
+                  {doc.fileData && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPreviewDoc(doc);
+                        setPreviewRotation(0);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#2a602f] font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                    >
+                      <Eye size={13} />
+                      <span>View Scan</span>
+                    </button>
+                  )}
+
+                  <a
+                    href={doc.fileData || `#download-${doc.id}`}
+                    download={doc.fileData ? doc.fileName : undefined}
+                    onClick={(e) => {
+                      if (!doc.fileData) {
+                        e.preventDefault();
+                        alert(`Initiating verified download for: ${doc.fileName}`);
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <Download size={13} />
+                    <span>Download</span>
+                  </a>
+                </div>
 
                 {(isSuperAdmin || currentUser?.name === doc.uploadedByName) && (
                   <button
                     onClick={() => handleDelete(doc.id, doc.title)}
-                    className="p-1.5 rounded-xl text-red-500 hover:bg-red-50 transition-all"
+                    className="p-1.5 rounded-xl text-red-500 hover:bg-red-50 transition-all cursor-pointer"
                     title="Delete document"
                   >
                     <Trash2 size={15} />
@@ -395,18 +446,123 @@ export const CRMDocumentVault: React.FC<CRMDocumentVaultProps> = ({ initialSearc
                 <button
                   type="button"
                   onClick={() => setShowUploadModal(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50"
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#2a602f] hover:bg-[#224f26] text-white font-bold text-xs shadow-sm"
+                  className="px-5 py-2 rounded-xl bg-[#2a602f] hover:bg-[#224f26] text-white font-bold text-xs shadow-sm cursor-pointer"
                 >
                   Upload & Archive
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Scanner Studio Modal (Phone Camera & Printer Scanner) ───────── */}
+      {showScannerModal && (
+        <CRMDocumentScannerModal
+          onClose={() => setShowScannerModal(false)}
+          onDocumentSaved={(newDoc) => {
+            refreshDocuments();
+          }}
+        />
+      )}
+
+      {/* ─── High-Resolution Scanned Document Preview Modal ───────────────── */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm"
+            onClick={() => setPreviewDoc(null)}
+          />
+
+          <div className="relative bg-white w-full max-w-4xl max-h-[92vh] rounded-3xl shadow-2xl flex flex-col font-['Outfit',sans-serif] overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95">
+            {/* Header */}
+            <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-[#2a602f] text-[#ffc30d] rounded-xl">
+                  {previewDoc.scanSource === 'printer_scanner' ? <Printer size={18} /> : <Camera size={18} />}
+                </div>
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-tight text-white">
+                    {previewDoc.title}
+                  </h3>
+                  <p className="text-xs text-slate-400 font-medium">
+                    {previewDoc.category} • {previewDoc.scanDevice || 'Official Scan'} • {previewDoc.fileSize}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPreviewRotation((r) => (r + 90) % 360)}
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs flex items-center gap-1.5 cursor-pointer"
+                  title="Rotate Document"
+                >
+                  <RotateCw size={14} />
+                  <span className="hidden sm:inline">Rotate</span>
+                </button>
+
+                {previewDoc.fileData && (
+                  <a
+                    href={previewDoc.fileData}
+                    download={previewDoc.fileName}
+                    className="px-3 py-2 rounded-xl bg-[#2a602f] hover:bg-[#235027] text-[#ffc30d] text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                  >
+                    <Download size={14} />
+                    <span>Download</span>
+                  </a>
+                )}
+
+                <button
+                  onClick={() => setPreviewDoc(null)}
+                  className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Document View Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-900/95 flex flex-col items-center justify-center min-h-[380px]">
+              {previewDoc.fileData ? (
+                <div className="max-w-2xl w-full bg-white rounded-xl shadow-2xl p-2 sm:p-4 transition-transform duration-200">
+                  <img
+                    src={previewDoc.fileData}
+                    alt={previewDoc.title}
+                    style={{ transform: `rotate(${previewRotation}deg)` }}
+                    className="w-full h-auto object-contain rounded border border-slate-200 shadow-sm transition-transform duration-200"
+                  />
+                </div>
+              ) : (
+                <div className="text-center text-slate-400 p-8">
+                  <FileText size={48} className="mx-auto mb-2 opacity-50" />
+                  <p className="text-sm font-bold">Standard Document Entry</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    This file was logged without embedded image data. Use the download link to retrieve it.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Metadata Footer */}
+            <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
+              <div className="flex items-center gap-4">
+                <span><strong>Uploaded by:</strong> {previewDoc.uploadedByName}</span>
+                <span><strong>Date:</strong> {previewDoc.uploadedAt}</span>
+                {previewDoc.companyName && (
+                  <span><strong>Company:</strong> {previewDoc.companyName}</span>
+                )}
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                ✓ Synchronized with Supabase Cloud
+              </span>
+            </div>
           </div>
         </div>
       )}

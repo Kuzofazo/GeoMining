@@ -2346,6 +2346,11 @@ class CRMStore {
     confidential: boolean;
     description?: string;
     downloadUrl?: string;
+    scanSource?: import('../types/crm').VaultScanSource;
+    scanDevice?: string;
+    pagesCount?: number;
+    fileData?: string;
+    ocrExtractedText?: string;
   }): VaultDocument {
     const currentUser = this.getCurrentUser();
     const newDoc: VaultDocument = {
@@ -2366,13 +2371,21 @@ class CRMStore {
       confidential: Boolean(docData.confidential),
       description: docData.description,
       downloadUrl: docData.downloadUrl || '#',
+      scanSource: docData.scanSource,
+      scanDevice: docData.scanDevice,
+      pagesCount: docData.pagesCount || 1,
+      fileData: docData.fileData,
+      ocrExtractedText: docData.ocrExtractedText,
     };
 
     this.vaultDocuments.unshift(newDoc);
     saveToStorage(STORAGE_KEYS.VAULT_DOCS, this.vaultDocuments);
     // Supabase cloud sync (fire-and-forget)
     upsertVaultDocToSupabase(newDoc).catch(() => {});
-    this.logAudit('DOCUMENT_UPLOAD', 'Document Vault', `Archived document "${newDoc.title}" (${newDoc.category})`);
+    const auditDetail = newDoc.scanSource
+      ? `Scanned and archived document "${newDoc.title}" via ${newDoc.scanSource === 'phone_camera' ? 'Mobile Camera Scanner' : 'Office Printer Scanner'} (${newDoc.pagesCount || 1} pages, ${newDoc.scanDevice || 'Standard Device'})`
+      : `Archived document "${newDoc.title}" (${newDoc.category})`;
+    this.logAudit('DOCUMENT_UPLOAD', 'Document Vault', auditDetail);
     this.notify();
     return newDoc;
   }
