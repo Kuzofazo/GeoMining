@@ -406,3 +406,15 @@ export async function insertAuditLogToSupabase(log: AuditLogEntry): Promise<void
   }
 }
 
+export async function updateUserPasswordInSupabase(userId: string, newPassword: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('crm_users')
+      .update({ default_password: newPassword })
+      .eq('id', userId);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+

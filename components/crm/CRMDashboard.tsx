@@ -283,6 +283,14 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
             <span>Daily Tasks</span>
           </button>
 
+          <button
+            onClick={() => onSelectTab('map')}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-[#ffc30d] text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer border border-emerald-700"
+          >
+            <MapPin size={15} />
+            <span>Liberia GIS Map</span>
+          </button>
+
           {canManageLicenses && (
             <button
               onClick={onOpenNewLicenseModal}

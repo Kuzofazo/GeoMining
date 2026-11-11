@@ -98,6 +98,14 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
       badgeColor: 'bg-emerald-50 text-[#2a602f] border border-emerald-200 font-bold',
     },
     {
+      id: 'map',
+      label: 'Liberia Concession GIS Map',
+      subtitle: '15 Counties GPS Spatial Cadastre',
+      icon: MapPin,
+      badge: '15 Counties',
+      badgeColor: 'bg-emerald-50 text-[#2a602f] border border-emerald-200 font-bold',
+    },
+    {
       id: 'compliance',
       label: 'Regulatory Compliance',
       subtitle: 'EPA & MME Statutory Audits',
@@ -143,7 +151,8 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
         item.id === 'tasks' ||
         item.id === 'employees' ||
         item.id === 'documents' ||
-        item.id === 'team_feed'
+        item.id === 'team_feed' ||
+        item.id === 'map'
       );
     }
     if (role === 'management' || role === 'administrator') {

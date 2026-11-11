@@ -17,6 +17,13 @@ import {
   Briefcase,
   ChevronRight,
   UserCheck,
+  Key,
+  X,
+  Copy,
+  Check,
+  Eye,
+  EyeOff,
+  RefreshCw,
 } from 'lucide-react';
 import { crmService } from '../../lib/crmService';
 import { EmployeePerformanceMetric, DepartmentSummary, UserRole } from '../../types/crm';
@@ -31,10 +38,28 @@ export const CRMEmployees: React.FC<CRMEmployeesProps> = ({ initialSearch = '' }
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeePerformanceMetric | null>(null);
 
+  // Admin Password Reset Modal State (Super Admin / Admin capability)
+  const [resetTargetUser, setResetTargetUser] = useState<{
+    id: string;
+    name: string;
+    email: string;
+    employeeId?: string;
+    role: string;
+  } | null>(null);
+  const [adminNewPassword, setAdminNewPassword] = useState<string>('');
+  const [showAdminPassword, setShowAdminPassword] = useState<boolean>(false);
+  const [resetStatus, setResetStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [copiedPassword, setCopiedPassword] = useState<boolean>(false);
+  const [isResetting, setIsResetting] = useState<boolean>(false);
+
   const users = crmService.getUsers();
   const departments = crmService.getDepartments();
   const performanceMetrics = crmService.getEmployeePerformanceMetrics();
   const currentUser = crmService.getCurrentUser();
+  const canAdminReset =
+    currentUser?.role === 'super_admin' ||
+    currentUser?.role === 'administrator' ||
+    crmService.checkPermission('canManageUsers');
 
   const filteredMetrics = performanceMetrics.filter((emp) => {
     const matchesSearch =
@@ -264,6 +289,31 @@ export const CRMEmployees: React.FC<CRMEmployeesProps> = ({ initialSearch = '' }
                       </span>
                     </div>
                   </div>
+
+                  {canAdminReset && (
+                    <button
+                      onClick={() => {
+                        const targetId = userObj?.id || emp.userId;
+                        const defaultSuggest = `Gmec@${emp.employeeId || '2026'}!`;
+                        setResetTargetUser({
+                          id: targetId,
+                          name: emp.userName,
+                          email: emp.userEmail,
+                          employeeId: emp.employeeId || userObj?.employeeId,
+                          role: emp.role,
+                        });
+                        setAdminNewPassword(defaultSuggest);
+                        setShowAdminPassword(true);
+                        setResetStatus(null);
+                        setCopiedPassword(false);
+                      }}
+                      className="mt-3 w-full py-1.5 px-3 rounded-xl bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-[#2a602f] border border-slate-200 hover:border-emerald-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-98"
+                      title="Super Admin / Administrator: Reset this staff member's password"
+                    >
+                      <Key size={13} className="text-[#2a602f]" />
+                      <span>Reset Staff Password</span>
+                    </button>
+                  )}
                 </div>
               );
             })}
@@ -407,6 +457,203 @@ export const CRMEmployees: React.FC<CRMEmployeesProps> = ({ initialSearch = '' }
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+      {/* ─── Super Admin / Admin Staff Password Reset Modal ───────────────── */}
+      {resetTargetUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm"
+            onClick={() => {
+              if (!isResetting) setResetTargetUser(null);
+            }}
+          />
+
+          <div className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 sm:p-8 animate-in fade-in zoom-in-95 border border-slate-100 font-['Outfit',sans-serif] text-slate-900">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-700 border border-purple-200 flex items-center justify-center shadow-xs">
+                  <Key size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 tracking-tight">
+                    Admin Password Reset
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Executive override for {resetTargetUser.name}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setResetTargetUser(null)}
+                disabled={isResetting}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Target Staff Summary */}
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 mb-5">
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="font-bold text-slate-800">{resetTargetUser.name}</span>
+                <span className="px-2 py-0.5 rounded-full bg-[#ffc30d] text-slate-950 text-[10px] font-black uppercase">
+                  {resetTargetUser.employeeId || resetTargetUser.id}
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-500 font-mono">{resetTargetUser.email}</div>
+              <div className="text-[10px] text-purple-700 font-bold uppercase tracking-wider mt-1">
+                Role: {resetTargetUser.role.replace('_', ' ')}
+              </div>
+            </div>
+
+            {/* Status alerts */}
+            {resetStatus && (
+              <div
+                className={`mb-5 p-3.5 rounded-2xl text-xs font-bold flex items-start gap-2.5 border ${
+                  resetStatus.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-rose-50 text-rose-800 border-rose-200'
+                }`}
+              >
+                {resetStatus.type === 'success' ? (
+                  <Check size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertTriangle size={16} className="text-rose-600 shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1">
+                  <p>{resetStatus.message}</p>
+                  {resetStatus.type === 'success' && (
+                    <div className="mt-2.5 flex items-center gap-2">
+                      <code className="px-2.5 py-1 bg-white border border-emerald-200 rounded-lg text-slate-900 font-mono text-xs">
+                        {adminNewPassword}
+                      </code>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(adminNewPassword);
+                          setCopiedPassword(true);
+                          setTimeout(() => setCopiedPassword(false), 2500);
+                        }}
+                        className="px-2 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        {copiedPassword ? <Check size={11} /> : <Copy size={11} />}
+                        <span>{copiedPassword ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!adminNewPassword || adminNewPassword.trim().length < 8) {
+                  setResetStatus({
+                    type: 'error',
+                    message: 'Password must be at least 8 characters long.',
+                  });
+                  return;
+                }
+                setIsResetting(true);
+                try {
+                  const res = crmService.adminResetUserPassword(
+                    resetTargetUser.id,
+                    adminNewPassword.trim()
+                  );
+                  if (res.success) {
+                    setResetStatus({
+                      type: 'success',
+                      message: `Password reset successfully for ${resetTargetUser.name}. The new credential is synchronized to Supabase. Provide it securely to the employee:`,
+                    });
+                  } else {
+                    setResetStatus({
+                      type: 'error',
+                      message: res.error || 'Failed to reset password. Insufficient permissions.',
+                    });
+                  }
+                } catch (err: any) {
+                  setResetStatus({
+                    type: 'error',
+                    message: err?.message || 'Error occurred while resetting password.',
+                  });
+                } finally {
+                  setIsResetting(false);
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-700">
+                    New Staff Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const randDigits = Math.floor(1000 + Math.random() * 9000);
+                      const generated = `Gmec@${resetTargetUser.employeeId || 'Pass'}${randDigits}!`;
+                      setAdminNewPassword(generated);
+                      setShowAdminPassword(true);
+                    }}
+                    className="text-[10px] font-bold text-purple-700 hover:text-purple-900 flex items-center gap-1 cursor-pointer"
+                  >
+                    <RefreshCw size={11} />
+                    <span>Generate Strong Password</span>
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type={showAdminPassword ? 'text' : 'password'}
+                    value={adminNewPassword}
+                    onChange={(e) => setAdminNewPassword(e.target.value)}
+                    required
+                    placeholder="Enter new 8+ char password"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:border-purple-600 focus:outline-none transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminPassword(!showAdminPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    {showAdminPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Minimum 8 characters. Will override current password in Supabase cloud storage.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setResetTargetUser(null)}
+                  disabled={isResetting}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isResetting}
+                  className="px-5 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer flex items-center gap-2"
+                >
+                  {isResetting ? (
+                    <span>Synchronizing...</span>
+                  ) : (
+                    <>
+                      <Key size={14} />
+                      <span>Commit Password Reset</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -28,8 +28,10 @@ import {
   Briefcase,
   Activity,
   RefreshCw,
+  Printer,
 } from 'lucide-react';
 import { crmService } from '../../lib/crmService';
+import { CRMOfficialDossierModal } from './CRMOfficialDossierModal';
 import {
   CompanyRecord,
   RegistrationStatus,
@@ -84,6 +86,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
   const [officerFilter, setOfficerFilter] = useState<string>('all');
   const [showOfficerAuditModal, setShowOfficerAuditModal] = useState<boolean>(false);
   const [selectedCompany, setSelectedCompany] = useState<CompanyRecord | null>(null);
+  const [dossierCompany, setDossierCompany] = useState<CompanyRecord | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDocUploadModal, setShowDocUploadModal] = useState(false);
   const [commentTargetCompany, setCommentTargetCompany] = useState<CompanyRecord | null>(null);
@@ -764,6 +767,14 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                             <Eye size={13} />
                             <span>Dossier</span>
                           </button>
+                          <button
+                            onClick={() => setDossierCompany(comp)}
+                            className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-[#2a602f] hover:text-[#ffc30d] text-[#2a602f] font-bold text-xs transition-colors flex items-center gap-1 shadow-sm cursor-pointer border border-emerald-200"
+                            title="Download Official Statutory PDF Dossier"
+                          >
+                            <Printer size={13} />
+                            <span>PDF</span>
+                          </button>
                           {canDelete && (
                             <button
                               onClick={() => handleDelete(comp.id)}
@@ -808,12 +819,23 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                 </div>
               </div>
 
-              <button
-                onClick={() => setSelectedCompany(null)}
-                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors"
-              >
-                <X size={18} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setDossierCompany(selectedCompany)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2a602f] hover:bg-[#235027] text-[#ffc30d] text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer"
+                  title="Download Official Statutory Dossier with GMEC Letterhead"
+                >
+                  <Printer size={14} />
+                  <span className="hidden sm:inline">Official PDF Dossier</span>
+                  <span className="sm:hidden">PDF</span>
+                </button>
+                <button
+                  onClick={() => setSelectedCompany(null)}
+                  className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
             {/* Status Transition Control & Observations Bar */}
@@ -1768,6 +1790,13 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
             </div>
           </div>
         </div>
+      )}
+      {/* ─── Official Statutory Dossier Modal (GMEC Letterhead PDF) ──────── */}
+      {dossierCompany && (
+        <CRMOfficialDossierModal
+          company={dossierCompany}
+          onClose={() => setDossierCompany(null)}
+        />
       )}
     </div>
   );

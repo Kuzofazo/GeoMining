@@ -19,8 +19,10 @@ import {
   ShieldCheck,
   Compass,
   MessageSquare,
+  Printer,
 } from 'lucide-react';
 import { crmService } from '../../lib/crmService';
+import { CRMOfficialDossierModal } from './CRMOfficialDossierModal';
 import {
   MiningLicense,
   LiberianLicenseCategory,
@@ -61,6 +63,7 @@ export const CRMLicenses: React.FC<CRMLicensesProps> = ({
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedLicense, setSelectedLicense] = useState<MiningLicense | null>(null);
+  const [dossierLicense, setDossierLicense] = useState<MiningLicense | null>(null);
   const [showIssueModal, setShowIssueModal] = useState(false);
   const [renewalModalLicense, setRenewalModalLicense] = useState<MiningLicense | null>(renewTargetLicense || null);
   const [commentTargetLicense, setCommentTargetLicense] = useState<MiningLicense | null>(null);
@@ -348,6 +351,14 @@ export const CRMLicenses: React.FC<CRMLicensesProps> = ({
                             <Eye size={13} />
                             <span>Details</span>
                           </button>
+                          <button
+                            onClick={() => setDossierLicense(lic)}
+                            className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-[#2a602f] hover:text-[#ffc30d] text-[#2a602f] font-bold text-xs transition-colors flex items-center gap-1 shadow-sm cursor-pointer border border-emerald-200"
+                            title="Download Official Statutory PDF Dossier"
+                          >
+                            <Printer size={13} />
+                            <span>PDF</span>
+                          </button>
 
                           {canManage && (
                             <button
@@ -406,12 +417,23 @@ export const CRMLicenses: React.FC<CRMLicensesProps> = ({
                 </div>
               </div>
 
-              <button
-                onClick={() => setSelectedLicense(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500"
-              >
-                <X size={16} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setDossierLicense(selectedLicense)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2a602f] hover:bg-[#235027] text-[#ffc30d] text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer"
+                  title="Download Official Statutory Dossier with GMEC Letterhead"
+                >
+                  <Printer size={14} />
+                  <span className="hidden sm:inline">Official PDF Dossier</span>
+                  <span className="sm:hidden">PDF</span>
+                </button>
+                <button
+                  onClick={() => setSelectedLicense(null)}
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
 
             {/* Concession Cadastral Summary Cards */}
@@ -778,6 +800,13 @@ export const CRMLicenses: React.FC<CRMLicensesProps> = ({
           recordType="license"
           recordTitle={`${commentTargetLicense.category} (${commentTargetLicense.companyName})`}
           recordReference={commentTargetLicense.licenseNumber}
+        />
+      )}
+      {/* ─── Official Statutory Dossier Modal (GMEC Letterhead PDF) ──────── */}
+      {dossierLicense && (
+        <CRMOfficialDossierModal
+          license={dossierLicense}
+          onClose={() => setDossierLicense(null)}
         />
       )}
     </div>

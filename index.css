@@ -110,3 +110,43 @@ h1, h2, h3, h4, h5, h6 {
     border-width: 0;
   }
 }
+
+/* ─── GMEC Official Letterhead & Dossier Print / PDF Styles ─────────────── */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Suppress browser interface, navigation and sidebars */
+  aside,
+  nav,
+  header,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .fixed {
+    position: static !important;
+    inset: auto !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  .overflow-y-auto {
+    overflow: visible !important;
+  }
+
+  .shadow-2xl,
+  .shadow-lg,
+  .shadow-md {
+    box-shadow: none !important;
+  }
+}

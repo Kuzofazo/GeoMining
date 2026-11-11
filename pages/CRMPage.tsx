@@ -15,6 +15,7 @@ import { CRMTasks } from '../components/crm/CRMTasks';
 import { CRMEmployees } from '../components/crm/CRMEmployees';
 import { CRMDocumentVault } from '../components/crm/CRMDocumentVault';
 import { CRMTeamFeed } from '../components/crm/CRMTeamFeed';
+import { CRMGisMap } from '../components/crm/CRMGisMap';
 
 export const CRMPage: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<CRMUser | null>(() =>
@@ -159,6 +160,8 @@ export const CRMPage: React.FC = () => {
               onClearRenewTarget={() => setRenewTargetLicense(null)}
             />
           )}
+
+          {activeTab === 'map' && <CRMGisMap />}
 
           {activeTab === 'compliance' && <CRMCompliance />}
 

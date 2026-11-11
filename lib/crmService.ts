@@ -58,6 +58,7 @@ import {
   upsertTeamMessageToSupabase,
   deleteTeamMessageFromSupabase,
   insertAuditLogToSupabase,
+  updateUserPasswordInSupabase,
 } from './crmSupabase';
 
 const STORAGE_KEYS = {
@@ -516,13 +517,16 @@ class CRMStore {
     // Real-time synchronization with persistent backend database
     if (typeof window !== 'undefined') {
       this.syncFromBackend();
+      this.runStatutoryExpirationRadar();
       // Periodic synchronization every 30 seconds
       setInterval(() => {
         this.syncFromBackend();
+        this.runStatutoryExpirationRadar();
       }, 30000);
       // Synchronize immediately when browser tab regains focus
       window.addEventListener('focus', () => {
         this.syncFromBackend();
+        this.runStatutoryExpirationRadar();
       });
     }
   }
@@ -1671,6 +1675,93 @@ class CRMStore {
     return true;
   }
 
+  // ─── Staff Self-Service Password Management ──────────────────────────────
+  public changeUserPassword(
+    userId: string,
+    currentPasswordAttempt: string,
+    newPassword: string
+  ): { success: boolean; error?: string } {
+    if (!newPassword || newPassword.trim().length < 8) {
+      return { success: false, error: 'New password must be at least 8 characters long.' };
+    }
+
+    const user = this.users.find(
+      (u) =>
+        u.id.toLowerCase() === userId.toLowerCase() ||
+        u.email.toLowerCase() === userId.toLowerCase() ||
+        (u.employeeId && u.employeeId.toLowerCase() === userId.toLowerCase())
+    );
+
+    if (!user) {
+      return { success: false, error: 'User account not found.' };
+    }
+
+    if (user.defaultPassword !== currentPasswordAttempt) {
+      return { success: false, error: 'Current password attempt is incorrect.' };
+    }
+
+    user.defaultPassword = newPassword;
+    saveToStorage(STORAGE_KEYS.USERS, this.users);
+
+    // Sync to Supabase cloud
+    updateUserPasswordInSupabase(user.id, newPassword).catch(() => {});
+
+    // Update session storage if changing own password
+    if (this.currentUser && this.currentUser.id.toLowerCase() === user.id.toLowerCase()) {
+      saveToStorage(STORAGE_KEYS.SESSION, this.currentUser);
+    }
+
+    this.logAudit(
+      'UPDATE',
+      'User Management',
+      `Employee ${user.name} (${user.email}, ID: ${user.employeeId || user.id}) successfully updated their account password via self-service portal.`,
+      user.id,
+      user.name
+    );
+    this.notify();
+    return { success: true };
+  }
+
+  public adminResetUserPassword(
+    userId: string,
+    newPassword: string
+  ): { success: boolean; error?: string } {
+    if (!this.checkPermission('canManageUsers') && this.currentUser?.role !== 'super_admin') {
+      return { success: false, error: 'Unauthorized: Only Super Admin and Administrators can reset staff passwords.' };
+    }
+
+    if (!newPassword || newPassword.trim().length < 8) {
+      return { success: false, error: 'New password must be at least 8 characters long.' };
+    }
+
+    const user = this.users.find(
+      (u) =>
+        u.id.toLowerCase() === userId.toLowerCase() ||
+        u.email.toLowerCase() === userId.toLowerCase() ||
+        (u.employeeId && u.employeeId.toLowerCase() === userId.toLowerCase())
+    );
+
+    if (!user) {
+      return { success: false, error: 'User account not found.' };
+    }
+
+    user.defaultPassword = newPassword;
+    saveToStorage(STORAGE_KEYS.USERS, this.users);
+
+    // Sync to Supabase cloud
+    updateUserPasswordInSupabase(user.id, newPassword).catch(() => {});
+
+    this.logAudit(
+      'UPDATE',
+      'User Management',
+      `Administrator ${this.currentUser?.name} performed administrative password reset for employee ${user.name} (${user.email}, ID: ${user.employeeId || user.id}).`,
+      user.id,
+      user.name
+    );
+    this.notify();
+    return { success: true };
+  }
+
   // ─── Audit Logs & Notifications ─────────────────────────────────────────
   public getAuditLogs(): AuditLogEntry[] {
     return [...this.auditLogs];
@@ -1770,52 +1861,134 @@ class CRMStore {
     }
   }
 
-  // ─── Expiration Forecaster & Notifications Refresh ───────────────────────
-  public refreshAlerts(): void {
+  // ─── Automated Statutory Expiration Radar (Requirement H) ────────────────
+  public runStatutoryExpirationRadar(): {
+    expiredCount: number;
+    urgentCount: number;
+    expiringSoonCount: number;
+    newAlertsCount: number;
+  } {
     const now = new Date().getTime();
     const newAlerts: SystemNotification[] = [];
+    let expiredCount = 0;
+    let urgentCount = 0;
+    let expiringSoonCount = 0;
 
-    // Check licenses
+    // Avoid duplicate alerts within the same session
+    const existingTitles = new Set(this.notifications.map((n) => n.title));
+
+    // 1. Audit Statutory Mining Licenses (Liberia Cadastre)
     this.licenses.forEach((lic) => {
       const exp = new Date(lic.expiryDate).getTime();
       const daysRemaining = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
 
-      if (daysRemaining < 0 && lic.renewalStatus !== 'expired' && lic.renewalStatus !== 'revoked') {
+      if (daysRemaining < 0) {
+        expiredCount++;
         lic.renewalStatus = 'expired';
-        newAlerts.push({
-          id: `alert-exp-${lic.id}`,
-          type: 'critical',
-          title: `License EXPIRED: ${lic.licenseNumber}`,
-          message: `${lic.category} held by ${lic.companyName} expired on ${lic.expiryDate}. Immediate statutory regularization required.`,
-          timestamp: 'Just now',
-          read: false,
-          relatedModule: 'Mining Licenses',
-          relatedId: lic.id,
-        });
-      } else if (daysRemaining <= 30 && daysRemaining >= 0 && lic.renewalStatus !== 'urgent') {
+        const title = `Statutory License EXPIRED: ${lic.licenseNumber}`;
+        if (!existingTitles.has(title)) {
+          newAlerts.push({
+            id: `alert-exp-${lic.id}`,
+            type: 'critical',
+            title,
+            message: `${lic.category} held by ${lic.companyName} expired on ${lic.expiryDate} (${Math.abs(daysRemaining)} days ago). Immediate statutory regularization or cancellation required by MME.`,
+            timestamp: 'Just now',
+            read: false,
+            relatedModule: 'Mining Licenses',
+            relatedId: lic.id,
+          });
+          existingTitles.add(title);
+        }
+      } else if (daysRemaining <= 7) {
+        urgentCount++;
         lic.renewalStatus = 'urgent';
-        newAlerts.push({
-          id: `alert-urg-${lic.id}`,
-          type: 'critical',
-          title: `Urgent Expiration (${daysRemaining} Days): ${lic.licenseNumber}`,
-          message: `${lic.category} (${lic.companyName}) expires in ${daysRemaining} days on ${lic.expiryDate}.`,
-          timestamp: 'Just now',
-          read: false,
-          relatedModule: 'Mining Licenses',
-          relatedId: lic.id,
-        });
-      } else if (daysRemaining <= 60 && daysRemaining > 30 && lic.renewalStatus !== 'expiring_soon') {
+        const title = `CRITICAL EXPIRATION (${daysRemaining} Days): ${lic.licenseNumber}`;
+        if (!existingTitles.has(title)) {
+          newAlerts.push({
+            id: `alert-crit-${lic.id}`,
+            type: 'critical',
+            title,
+            message: `${lic.category} (${lic.companyName}) expires in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'} on ${lic.expiryDate}. Immediate statutory hearing and renewal required.`,
+            timestamp: 'Just now',
+            read: false,
+            relatedModule: 'Mining Licenses',
+            relatedId: lic.id,
+          });
+          existingTitles.add(title);
+        }
+      } else if (daysRemaining <= 30) {
+        urgentCount++;
+        lic.renewalStatus = 'urgent';
+        const title = `Urgent Expiration (${daysRemaining} Days): ${lic.licenseNumber}`;
+        if (!existingTitles.has(title)) {
+          newAlerts.push({
+            id: `alert-urg-${lic.id}`,
+            type: 'critical',
+            title,
+            message: `${lic.category} (${lic.companyName}) expires in ${daysRemaining} days on ${lic.expiryDate}.`,
+            timestamp: 'Just now',
+            read: false,
+            relatedModule: 'Mining Licenses',
+            relatedId: lic.id,
+          });
+          existingTitles.add(title);
+        }
+      } else if (daysRemaining <= 60) {
+        expiringSoonCount++;
         lic.renewalStatus = 'expiring_soon';
-        newAlerts.push({
-          id: `alert-soon-${lic.id}`,
-          type: 'warning',
-          title: `Upcoming Renewal (${daysRemaining} Days): ${lic.licenseNumber}`,
-          message: `${lic.category} expires in ${daysRemaining} days. Prepare MME filing dossier.`,
-          timestamp: 'Just now',
-          read: false,
-          relatedModule: 'Mining Licenses',
-          relatedId: lic.id,
-        });
+        const title = `Upcoming Renewal (${daysRemaining} Days): ${lic.licenseNumber}`;
+        if (!existingTitles.has(title)) {
+          newAlerts.push({
+            id: `alert-soon-${lic.id}`,
+            type: 'warning',
+            title,
+            message: `${lic.category} expires in ${daysRemaining} days. Prepare MME filing dossier.`,
+            timestamp: 'Just now',
+            read: false,
+            relatedModule: 'Mining Licenses',
+            relatedId: lic.id,
+          });
+          existingTitles.add(title);
+        }
+      }
+    });
+
+    // 2. Audit Registered Corporate Annual Renewal Deadlines
+    this.companies.forEach((comp) => {
+      if (!comp.annualRenewalDate) return;
+      const exp = new Date(comp.annualRenewalDate).getTime();
+      const daysRemaining = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+
+      if (daysRemaining <= 0) {
+        const title = `Annual Filing OVERDUE: ${comp.companyName}`;
+        if (!existingTitles.has(title)) {
+          newAlerts.push({
+            id: `alert-comp-exp-${comp.id}`,
+            type: 'critical',
+            title,
+            message: `Annual Liberian Business Registry (LBR) renewal for "${comp.companyName}" (${comp.registrationNumber}) passed on ${comp.annualRenewalDate}.`,
+            timestamp: 'Just now',
+            read: false,
+            relatedModule: 'Company Registration',
+            relatedId: comp.id,
+          });
+          existingTitles.add(title);
+        }
+      } else if (daysRemaining <= 30) {
+        const title = `Corporate Filing Due in ${daysRemaining} Days: ${comp.companyName}`;
+        if (!existingTitles.has(title)) {
+          newAlerts.push({
+            id: `alert-comp-soon-${comp.id}`,
+            type: 'warning',
+            title,
+            message: `Annual compliance renewal due on ${comp.annualRenewalDate}. Prepare Registry intake dossier.`,
+            timestamp: 'Just now',
+            read: false,
+            relatedModule: 'Company Registration',
+            relatedId: comp.id,
+          });
+          existingTitles.add(title);
+        }
       }
     });
 
@@ -1825,6 +1998,17 @@ class CRMStore {
       saveToStorage(STORAGE_KEYS.LICENSES, this.licenses);
       this.notify();
     }
+
+    return {
+      expiredCount,
+      urgentCount,
+      expiringSoonCount,
+      newAlertsCount: newAlerts.length,
+    };
+  }
+
+  public refreshAlerts(): void {
+    this.runStatutoryExpirationRadar();
   }
 
   // ─── Dashboard Stats & KPIs ──────────────────────────────────────────────
@@ -2069,6 +2253,16 @@ class CRMStore {
       'Daily Tasks',
       `Assigned task "${newTask.title}" to ${newTask.assignedToName} (${newTask.priority.toUpperCase()})`
     );
+
+    // E. Task Assignment Alerts & Reminders: Auto popup notification + badge counter increment
+    this.addNotification({
+      type: newTask.priority === 'critical' ? 'critical' : newTask.priority === 'high' ? 'warning' : 'info',
+      title: `Task Assigned: ${newTask.title}`,
+      message: `Directive assigned to ${newTask.assignedToName} by ${newTask.createdByName} (${newTask.priority.toUpperCase()}). Due: ${newTask.dueDate} at ${newTask.dueTime}. Department: ${newTask.department}.`,
+      relatedModule: 'Daily Tasks',
+      relatedId: newTask.id,
+    });
+
     this.notify();
     return newTask;
   }
