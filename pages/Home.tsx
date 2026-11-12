@@ -487,6 +487,92 @@ const Home: React.FC = () => {
         </div>
       </section>
 
+      {/* ── Trusted Partners Marquee Strip ── */}
+      <section className="py-14 sm:py-16 bg-slate-50 border-y border-slate-200/80 overflow-hidden relative">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 mb-8 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2d5a27]/10 text-[#2d5a27] text-xs font-bold tracking-widest uppercase mb-2">
+            <ShieldCheck size={14} className="text-[#2d5a27]" />
+            <span>Strategic Alliances</span>
+          </div>
+          <h3 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">
+            Our Trusted Industry &amp; Institutional Partners
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto mt-1">
+            Collaborating with premier mining operators, geoscience authorities, and regulatory stakeholders across West Africa.
+          </p>
+        </div>
+
+        {/* Infinite Moving Marquee with smooth left/right gradient fade */}
+        <div className="group relative w-full overflow-hidden partners-fade-mask select-none py-2">
+          <div className="flex w-max">
+            {/* Track 1 */}
+            <div className="flex shrink-0 items-center gap-8 sm:gap-12 pr-8 sm:pr-12 animate-marquee">
+              {[
+                { src: "/images/partners/P1.png", alt: "Strategic Mining Partner" },
+                { src: "/images/partners/P2.png", alt: "Geological Consultancy Partner" },
+                { src: "/images/partners/P3.png", alt: "Environmental Science Partner" },
+                { src: "/images/partners/P4.png", alt: "Institutional Cadastre Affiliate" },
+                { src: "/images/partners/P1.png", alt: "Strategic Mining Partner" },
+                { src: "/images/partners/P2.png", alt: "Geological Consultancy Partner" },
+                { src: "/images/partners/P3.png", alt: "Environmental Science Partner" },
+                { src: "/images/partners/P4.png", alt: "Institutional Cadastre Affiliate" },
+                { src: "/images/partners/P1.png", alt: "Strategic Mining Partner" },
+                { src: "/images/partners/P2.png", alt: "Geological Consultancy Partner" },
+                { src: "/images/partners/P3.png", alt: "Environmental Science Partner" },
+                { src: "/images/partners/P4.png", alt: "Institutional Cadastre Affiliate" },
+              ].map((partner, idx) => (
+                <div
+                  key={`track1-${idx}`}
+                  className="flex-shrink-0 w-44 sm:w-56 h-20 sm:h-24 bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-[#2d5a27]/40 flex items-center justify-center p-3 sm:p-4 transition-all duration-300 group/item cursor-pointer"
+                >
+                  <img
+                    src={partner.src}
+                    alt={partner.alt}
+                    className="h-full w-full object-contain filter grayscale contrast-125 opacity-70 group-hover/item:grayscale-0 group-hover/item:contrast-100 group-hover/item:opacity-100 transition-all duration-300 transform group-hover/item:scale-105 select-none pointer-events-none"
+                    draggable={false}
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Track 2 (exact duplicate for 100% seamless infinite loop) */}
+            <div
+              className="flex shrink-0 items-center gap-8 sm:gap-12 pr-8 sm:pr-12 animate-marquee"
+              aria-hidden="true"
+            >
+              {[
+                { src: "/images/partners/P1.png", alt: "Strategic Mining Partner" },
+                { src: "/images/partners/P2.png", alt: "Geological Consultancy Partner" },
+                { src: "/images/partners/P3.png", alt: "Environmental Science Partner" },
+                { src: "/images/partners/P4.png", alt: "Institutional Cadastre Affiliate" },
+                { src: "/images/partners/P1.png", alt: "Strategic Mining Partner" },
+                { src: "/images/partners/P2.png", alt: "Geological Consultancy Partner" },
+                { src: "/images/partners/P3.png", alt: "Environmental Science Partner" },
+                { src: "/images/partners/P4.png", alt: "Institutional Cadastre Affiliate" },
+                { src: "/images/partners/P1.png", alt: "Strategic Mining Partner" },
+                { src: "/images/partners/P2.png", alt: "Geological Consultancy Partner" },
+                { src: "/images/partners/P3.png", alt: "Environmental Science Partner" },
+                { src: "/images/partners/P4.png", alt: "Institutional Cadastre Affiliate" },
+              ].map((partner, idx) => (
+                <div
+                  key={`track2-${idx}`}
+                  className="flex-shrink-0 w-44 sm:w-56 h-20 sm:h-24 bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-[#2d5a27]/40 flex items-center justify-center p-3 sm:p-4 transition-all duration-300 group/item cursor-pointer"
+                >
+                  <img
+                    src={partner.src}
+                    alt={partner.alt}
+                    className="h-full w-full object-contain filter grayscale contrast-125 opacity-70 group-hover/item:grayscale-0 group-hover/item:contrast-100 group-hover/item:opacity-100 transition-all duration-300 transform group-hover/item:scale-105 select-none pointer-events-none"
+                    draggable={false}
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Partner With Us Section */}
       <section
         id="contact"

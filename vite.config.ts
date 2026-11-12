@@ -95,10 +95,35 @@ export default defineConfig(({ mode }) => {
           chunkFileNames: 'assets/[name]-[hash].js',
           assetFileNames: 'assets/[name]-[hash].[ext]',
 
-          manualChunks: {
-            vendor: ['react', 'react-dom', 'react-router-dom'],
-            supabase: ['@supabase/supabase-js'],
-            icons: ['lucide-react'],
+          manualChunks(id) {
+            const normalizedId = id.replace(/\\/g, '/');
+            if (normalizedId.includes('/node_modules/')) {
+              if (
+                normalizedId.includes('/react/') ||
+                normalizedId.includes('/react-dom/') ||
+                normalizedId.includes('/react-router-dom/')
+              ) {
+                return 'vendor';
+              }
+              if (normalizedId.includes('/lucide-react/')) {
+                return 'icons';
+              }
+              if (normalizedId.includes('/@supabase/')) {
+                return 'supabase';
+              }
+              if (normalizedId.includes('/recharts/') || normalizedId.includes('/d3-')) {
+                return 'charts';
+              }
+              if (normalizedId.includes('/leaflet/') || normalizedId.includes('/react-leaflet/')) {
+                return 'maps';
+              }
+            }
+            if (normalizedId.includes('/pages/')) {
+              const match = normalizedId.match(/\/pages\/([^/.]+)/);
+              if (match && match[1]) {
+                return `page-${match[1].toLowerCase()}`;
+              }
+            }
           },
         },
       },

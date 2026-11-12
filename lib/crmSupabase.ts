@@ -230,18 +230,18 @@ export function messageToRow(m: TeamMessage): Record<string, any> {
 export function rowToMessage(r: any): TeamMessage {
   return {
     id: r.id,
-    authorId: r.author_id,
-    authorName: r.author_name,
-    authorRole: r.author_role,
-    authorDepartment: r.author_department,
+    authorId: r.author_id || 'Gmec-001',
+    authorName: r.author_name || 'Staff Member',
+    authorRole: r.author_role || 'registry_department',
+    authorDepartment: r.author_department || 'Operations',
     title: r.title || undefined,
     content: r.content,
     category: r.category || 'general',
     isPinned: Boolean(r.is_pinned),
     likes: r.likes || 0,
-    likedByUsers: r.liked_by_users || [],
-    replies: r.replies || [],
-    timestamp: r.timestamp,
+    likedByUsers: Array.isArray(r.liked_by_users) ? r.liked_by_users : [],
+    replies: Array.isArray(r.replies) ? r.replies : [],
+    timestamp: r.timestamp || 'Recent',
   };
 }
 
@@ -371,9 +371,13 @@ export async function fetchTeamMessagesFromSupabase(): Promise<TeamMessage[] | n
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) return null;
+    if (error) {
+      console.warn('[Supabase CRM] Fetch team messages notice:', error.message);
+      return null;
+    }
     return (data || []).map(rowToMessage);
-  } catch {
+  } catch (err: any) {
+    console.warn('[Supabase CRM] Error fetching team messages:', err?.message || err);
     return null;
   }
 }
@@ -382,8 +386,25 @@ export async function upsertTeamMessageToSupabase(msg: TeamMessage): Promise<boo
   try {
     const row = messageToRow(msg);
     const { error } = await supabase.from('crm_team_messages').upsert(row, { onConflict: 'id' });
-    return !error;
-  } catch {
+    if (error) {
+      console.warn('[Supabase CRM] Upsert message notice:', error.message);
+      // Fallback: If FK constraint fails on author_id, retry with author_id = null
+      if (error.code === '23503' || error.message?.includes('foreign key')) {
+        const fallbackRow = { ...row, author_id: null };
+        const { error: retryErr } = await supabase
+          .from('crm_team_messages')
+          .upsert(fallbackRow, { onConflict: 'id' });
+        if (retryErr) {
+          console.warn('[Supabase CRM] Fallback save failed:', retryErr.message);
+          return false;
+        }
+        return true;
+      }
+      return false;
+    }
+    return true;
+  } catch (err: any) {
+    console.warn('[Supabase CRM] Error saving team message:', err?.message || err);
     return false;
   }
 }
@@ -391,7 +412,11 @@ export async function upsertTeamMessageToSupabase(msg: TeamMessage): Promise<boo
 export async function deleteTeamMessageFromSupabase(id: string): Promise<boolean> {
   try {
     const { error } = await supabase.from('crm_team_messages').delete().eq('id', id);
-    return !error;
+    if (error) {
+      console.warn('[Supabase CRM] Delete message notice:', error.message);
+      return false;
+    }
+    return true;
   } catch {
     return false;
   }

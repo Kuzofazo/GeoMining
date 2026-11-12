@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MessageSquare,
   Send,
@@ -12,6 +12,7 @@ import {
   Clock,
   Sparkles,
   Users,
+  RefreshCw,
 } from 'lucide-react';
 import { crmService } from '../../lib/crmService';
 import { TeamMessage } from '../../types/crm';
@@ -24,6 +25,7 @@ export const CRMTeamFeed: React.FC = () => {
   const [newPinned, setNewPinned] = useState(false);
   const [activeReplyId, setActiveReplyId] = useState<string | null>(null);
   const [replyInput, setReplyInput] = useState('');
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   const currentUser = crmService.getCurrentUser();
   const isSuperAdmin = currentUser?.role === 'super_admin';
@@ -31,6 +33,18 @@ export const CRMTeamFeed: React.FC = () => {
 
   const refreshMessages = () => {
     setMessages(crmService.getTeamMessages());
+  };
+
+  useEffect(() => {
+    const unsubscribe = crmService.subscribe(refreshMessages);
+    return () => unsubscribe();
+  }, []);
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    await crmService.syncFromBackend();
+    refreshMessages();
+    setTimeout(() => setIsSyncing(false), 500);
   };
 
   const handleCreatePost = (e: React.FormEvent) => {
@@ -108,6 +122,23 @@ export const CRMTeamFeed: React.FC = () => {
           <p className="text-xs sm:text-sm text-slate-500 font-medium">
             Bitrix24-style company broadcast wall, inter-departmental discussions & operational announcements
           </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Supabase Cloud Connected</span>
+          </span>
+          <button
+            type="button"
+            onClick={handleManualSync}
+            disabled={isSyncing}
+            className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+            title="Pull latest team broadcasts from Supabase database"
+          >
+            <RefreshCw size={13} className={isSyncing ? 'animate-spin text-[#2a602f]' : ''} />
+            <span>{isSyncing ? 'Syncing...' : 'Sync Feed'}</span>
+          </button>
         </div>
       </div>
 
