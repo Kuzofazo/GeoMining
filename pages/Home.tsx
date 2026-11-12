@@ -506,7 +506,7 @@ const Home: React.FC = () => {
         <div className="group relative w-full overflow-hidden partners-fade-mask select-none py-2">
           <div className="flex w-max">
             {/* Track 1 */}
-            <div className="flex shrink-0 items-center gap-8 sm:gap-12 pr-8 sm:pr-12 animate-marquee">
+            <div className="flex shrink-0 items-center gap-12 sm:gap-16 pr-12 sm:pr-16 animate-marquee">
               {[
                 { src: "/images/partners/P1.png", alt: "Strategic Mining Partner" },
                 { src: "/images/partners/P2.png", alt: "Geological Consultancy Partner" },
@@ -523,12 +523,12 @@ const Home: React.FC = () => {
               ].map((partner, idx) => (
                 <div
                   key={`track1-${idx}`}
-                  className="flex-shrink-0 w-44 sm:w-56 h-20 sm:h-24 bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-[#2d5a27]/40 flex items-center justify-center p-3 sm:p-4 transition-all duration-300 group/item cursor-pointer"
+                  className="flex-shrink-0 w-36 sm:w-48 h-12 sm:h-16 flex items-center justify-center transition-all duration-300 group/item cursor-pointer"
                 >
                   <img
                     src={partner.src}
                     alt={partner.alt}
-                    className="h-full w-full object-contain filter grayscale contrast-125 opacity-70 group-hover/item:grayscale-0 group-hover/item:contrast-100 group-hover/item:opacity-100 transition-all duration-300 transform group-hover/item:scale-105 select-none pointer-events-none"
+                    className="max-h-10 sm:max-h-12 w-auto max-w-full object-contain filter grayscale contrast-125 opacity-60 group-hover/item:grayscale-0 group-hover/item:contrast-100 group-hover/item:opacity-100 transition-all duration-300 transform group-hover/item:scale-110 select-none pointer-events-none"
                     draggable={false}
                     loading="lazy"
                   />
@@ -538,7 +538,7 @@ const Home: React.FC = () => {
 
             {/* Track 2 (exact duplicate for 100% seamless infinite loop) */}
             <div
-              className="flex shrink-0 items-center gap-8 sm:gap-12 pr-8 sm:pr-12 animate-marquee"
+              className="flex shrink-0 items-center gap-12 sm:gap-16 pr-12 sm:pr-16 animate-marquee"
               aria-hidden="true"
             >
               {[
@@ -557,12 +557,12 @@ const Home: React.FC = () => {
               ].map((partner, idx) => (
                 <div
                   key={`track2-${idx}`}
-                  className="flex-shrink-0 w-44 sm:w-56 h-20 sm:h-24 bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-[#2d5a27]/40 flex items-center justify-center p-3 sm:p-4 transition-all duration-300 group/item cursor-pointer"
+                  className="flex-shrink-0 w-36 sm:w-48 h-12 sm:h-16 flex items-center justify-center transition-all duration-300 group/item cursor-pointer"
                 >
                   <img
                     src={partner.src}
                     alt={partner.alt}
-                    className="h-full w-full object-contain filter grayscale contrast-125 opacity-70 group-hover/item:grayscale-0 group-hover/item:contrast-100 group-hover/item:opacity-100 transition-all duration-300 transform group-hover/item:scale-105 select-none pointer-events-none"
+                    className="max-h-10 sm:max-h-12 w-auto max-w-full object-contain filter grayscale contrast-125 opacity-60 group-hover/item:grayscale-0 group-hover/item:contrast-100 group-hover/item:opacity-100 transition-all duration-300 transform group-hover/item:scale-110 select-none pointer-events-none"
                     draggable={false}
                     loading="lazy"
                   />
