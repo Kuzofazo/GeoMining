@@ -122,7 +122,7 @@ export const CRMPage: React.FC = () => {
         />
 
         {/* Dynamic Subcomponent Workspace */}
-        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 min-w-0 p-3 sm:p-6 lg:p-8 overflow-y-auto">
           {activeTab === 'dashboard' && (
             <CRMDashboard
               onSelectTab={handleTabSelect}

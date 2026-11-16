@@ -177,7 +177,7 @@ export const CRMSidebar: React.FC<CRMSidebarProps> = ({
 
       {/* Sidebar Panel */}
       <aside
-        className={`fixed lg:sticky top-16 sm:top-20 z-40 h-[calc(100vh-4rem)] sm:h-[calc(100vh-5rem)] w-72 sm:w-80 bg-white border-r border-slate-200 text-slate-700 flex flex-col justify-between transition-transform duration-300 ease-in-out shrink-0 overflow-y-auto shadow-sm ${
+        className={`fixed lg:sticky top-14 sm:top-20 z-40 h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-5rem)] w-72 sm:w-80 bg-white border-r border-slate-200 text-slate-700 flex flex-col justify-between transition-transform duration-300 ease-in-out shrink-0 overflow-y-auto shadow-sm ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >

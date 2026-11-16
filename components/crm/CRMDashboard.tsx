@@ -66,7 +66,7 @@ const WaveSparkline: React.FC<{
 }> = ({ data, color, fillId, gradientFrom }) => {
   const chartData = data.map((val, idx) => ({ idx, val }));
   return (
-    <div className="h-14 w-full -mb-2 overflow-hidden pointer-events-none">
+    <div className="h-10 sm:h-14 w-full -mb-2 overflow-hidden pointer-events-none">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={chartData} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
           <defs>
@@ -240,27 +240,27 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
       {/* ─── Breadcrumb & Top Executive Command Header ─────────────────────── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-1">
-            <span>GMEC Republic of Liberia Cadastre</span>
-            <span>›</span>
+          <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold text-slate-400 mb-1 flex-wrap sm:flex-nowrap">
+            <span className="hidden sm:inline">GMEC Republic of Liberia Cadastre</span>
+            <span className="hidden sm:inline">›</span>
             <span>Dashboards</span>
             <span>›</span>
             <span className="text-[#2a602f] font-black">Management Overview</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 tracking-tight leading-tight">
             Executive Management Dashboard
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1 leading-relaxed">
             Complete corporate command overview: Daily operations, active concessions, departmental personnel &amp; statutory compliance
           </p>
         </div>
 
         {/* Quick Executive Command Actions */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto mt-2 lg:mt-0">
           {canManageCompanies ? (
             <button
               onClick={onOpenNewCompanyModal}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#2a602f] hover:bg-[#235027] text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer"
+              className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2 px-3.5 py-2.5 sm:py-2 rounded-xl bg-[#2a602f] hover:bg-[#235027] text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer"
             >
               <PlusCircle size={15} />
               <span>Register Company</span>
@@ -268,7 +268,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
           ) : (
             <button
               onClick={() => onSelectTab('companies')}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#2a602f] hover:bg-[#235027] text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer"
+              className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2 px-3.5 py-2.5 sm:py-2 rounded-xl bg-[#2a602f] hover:bg-[#235027] text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer"
             >
               <Building2 size={15} />
               <span>Review Companies</span>
@@ -277,7 +277,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
 
           <button
             onClick={() => onSelectTab('tasks')}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer"
+            className="flex items-center justify-center gap-2 px-3 py-2.5 sm:py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer"
           >
             <CheckSquare size={15} />
             <span>Daily Tasks</span>
@@ -285,7 +285,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
 
           <button
             onClick={() => onSelectTab('map')}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-[#ffc30d] text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer border border-emerald-700"
+            className="flex items-center justify-center gap-2 px-3 py-2.5 sm:py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-[#ffc30d] text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer border border-emerald-700"
           >
             <MapPin size={15} />
             <span>Liberia GIS Map</span>
@@ -294,7 +294,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
           {canManageLicenses && (
             <button
               onClick={onOpenNewLicenseModal}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#ffc30d] hover:bg-[#e6af0c] text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer"
+              className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2 px-3.5 py-2.5 sm:py-2 rounded-xl bg-[#ffc30d] hover:bg-[#e6af0c] text-slate-950 text-xs font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer"
             >
               <FileCheck2 size={15} />
               <span>Issue License</span>
@@ -304,7 +304,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
           {canExport && (
             <button
               onClick={() => onSelectTab('reports')}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-2xs cursor-pointer"
+              className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2 px-3.5 py-2.5 sm:py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-2xs cursor-pointer"
             >
               <Download size={15} />
               <span>Export Dossier</span>
@@ -407,23 +407,23 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
       )}
 
       {/* ─── TOP SECTION: 4 Sleek Executive KPI Cards With Wave Sparklines ─── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
         {/* Card 1: Total Tasks (Blue Wave) */}
         <div
           onClick={() => onSelectTab('tasks')}
-          className="bg-[#0f172a] rounded-3xl p-5 border border-slate-800 shadow-xl hover:border-blue-500/50 transition-all cursor-pointer flex flex-col justify-between overflow-hidden relative group"
+          className="bg-[#0f172a] rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-800 shadow-xl hover:border-blue-500/50 transition-all cursor-pointer flex flex-col justify-between overflow-hidden relative group"
         >
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-2xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center font-bold">
-                <CheckSquare size={18} />
+            <div className="flex items-center justify-between mb-2.5 sm:mb-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center font-bold">
+                <CheckSquare size={17} />
               </div>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/15 text-blue-400 border border-blue-500/30">
                 Pending
               </span>
             </div>
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Tasks</div>
-            <div className="text-3xl font-black text-white tracking-tight mt-0.5">
+            <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Total Tasks</div>
+            <div className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-0.5">
               {allTasks.length > 0 ? allTasks.length : 24}
             </div>
           </div>
@@ -438,19 +438,19 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
         {/* Card 2: In Progress (Purple Wave) */}
         <div
           onClick={() => onSelectTab('tasks')}
-          className="bg-[#0f172a] rounded-3xl p-5 border border-slate-800 shadow-xl hover:border-purple-500/50 transition-all cursor-pointer flex flex-col justify-between overflow-hidden relative group"
+          className="bg-[#0f172a] rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-800 shadow-xl hover:border-purple-500/50 transition-all cursor-pointer flex flex-col justify-between overflow-hidden relative group"
         >
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center font-bold">
-                <Clock size={18} />
+            <div className="flex items-center justify-between mb-2.5 sm:mb-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center font-bold">
+                <Clock size={17} />
               </div>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/15 text-purple-400 border border-purple-500/30">
                 In Progress
               </span>
             </div>
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">In Progress</div>
-            <div className="text-3xl font-black text-white tracking-tight mt-0.5">
+            <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">In Progress</div>
+            <div className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-0.5">
               {inProgressTasks.length > 0 ? inProgressTasks.length : 8}
             </div>
           </div>
@@ -465,19 +465,19 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
         {/* Card 3: Completed (Teal Wave) */}
         <div
           onClick={() => onSelectTab('tasks')}
-          className="bg-[#0f172a] rounded-3xl p-5 border border-slate-800 shadow-xl hover:border-teal-500/50 transition-all cursor-pointer flex flex-col justify-between overflow-hidden relative group"
+          className="bg-[#0f172a] rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-800 shadow-xl hover:border-teal-500/50 transition-all cursor-pointer flex flex-col justify-between overflow-hidden relative group"
         >
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-2xl bg-teal-500/15 border border-teal-500/30 text-teal-400 flex items-center justify-center font-bold">
-                <CheckCircle2 size={18} />
+            <div className="flex items-center justify-between mb-2.5 sm:mb-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-teal-500/15 border border-teal-500/30 text-teal-400 flex items-center justify-center font-bold">
+                <CheckCircle2 size={17} />
               </div>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-500/15 text-teal-400 border border-teal-500/30">
                 Completed
               </span>
             </div>
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Completed</div>
-            <div className="text-3xl font-black text-white tracking-tight mt-0.5">
+            <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Completed</div>
+            <div className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-0.5">
               {completedTasks.length > 0 ? completedTasks.length : 14}
             </div>
           </div>
@@ -492,19 +492,19 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
         {/* Card 4: Overdue (Rose/Red Wave) */}
         <div
           onClick={() => onSelectTab('tasks')}
-          className="bg-[#0f172a] rounded-3xl p-5 border border-slate-800 shadow-xl hover:border-rose-500/50 transition-all cursor-pointer flex flex-col justify-between overflow-hidden relative group"
+          className="bg-[#0f172a] rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-800 shadow-xl hover:border-rose-500/50 transition-all cursor-pointer flex flex-col justify-between overflow-hidden relative group"
         >
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="w-10 h-10 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center font-bold">
-                <AlertCircle size={18} />
+            <div className="flex items-center justify-between mb-2.5 sm:mb-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center font-bold">
+                <AlertCircle size={17} />
               </div>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/15 text-rose-400 border border-rose-500/30">
                 Overdue
               </span>
             </div>
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-400">Overdue</div>
-            <div className="text-3xl font-black text-white tracking-tight mt-0.5">
+            <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Overdue</div>
+            <div className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-0.5">
               {overdueTasks.length > 0 ? overdueTasks.length : 2}
             </div>
           </div>
@@ -518,58 +518,58 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
       </div>
 
       {/* ─── COMPANY ASSET & CONCESSION OVERVIEW STRIP ─────────────────────── */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm grid grid-cols-2 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+      <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-sm grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <div
           onClick={() => onSelectTab('companies')}
-          className="pt-2 md:pt-0 md:px-4 cursor-pointer hover:opacity-80 transition-opacity"
+          className="p-3 sm:p-2.5 rounded-xl sm:rounded-none bg-slate-50/70 sm:bg-transparent border sm:border-0 border-slate-100 cursor-pointer hover:opacity-80 transition-opacity"
         >
           <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
             Registered Companies
           </span>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-900">{metrics.totalCompanies}</span>
-            <span className="text-xs text-amber-600 font-bold">({metrics.pendingCompanies} Pending Review)</span>
+            <span className="text-xl sm:text-2xl font-black text-slate-900">{metrics.totalCompanies}</span>
+            <span className="text-[11px] sm:text-xs text-amber-600 font-bold">({metrics.pendingCompanies} Pending Review)</span>
           </div>
           <span className="text-[11px] text-slate-500 block mt-0.5">Dual Statutory Approval Gate</span>
         </div>
 
         <div
           onClick={() => onSelectTab('licenses')}
-          className="pt-2 md:pt-0 md:px-4 cursor-pointer hover:opacity-80 transition-opacity"
+          className="p-3 sm:p-2.5 rounded-xl sm:rounded-none bg-slate-50/70 sm:bg-transparent border sm:border-0 border-slate-100 sm:border-l sm:border-slate-100 cursor-pointer hover:opacity-80 transition-opacity"
         >
           <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
             Mining Concession Licenses
           </span>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-900">{metrics.totalLicenses}</span>
-            <span className="text-xs text-emerald-700 font-bold">12 Statutory Classes</span>
+            <span className="text-xl sm:text-2xl font-black text-slate-900">{metrics.totalLicenses}</span>
+            <span className="text-[11px] sm:text-xs text-emerald-700 font-bold">12 Statutory Classes</span>
           </div>
           <span className="text-[11px] text-slate-500 block mt-0.5">Across 15 Liberian Counties</span>
         </div>
 
         <div
           onClick={() => onSelectTab('compliance')}
-          className="pt-2 md:pt-0 md:px-4 cursor-pointer hover:opacity-80 transition-opacity"
+          className="p-3 sm:p-2.5 rounded-xl sm:rounded-none bg-slate-50/70 sm:bg-transparent border sm:border-0 border-slate-100 sm:border-l sm:border-slate-100 cursor-pointer hover:opacity-80 transition-opacity"
         >
           <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
             EPA &amp; MME Compliance Rate
           </span>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-[#2a602f]">{metrics.complianceRate}%</span>
-            <span className="text-xs text-slate-500">({metrics.compliantObligations}/{metrics.totalObligations})</span>
+            <span className="text-xl sm:text-2xl font-black text-[#2a602f]">{metrics.complianceRate}%</span>
+            <span className="text-[11px] sm:text-xs text-slate-500">({metrics.compliantObligations}/{metrics.totalObligations})</span>
           </div>
           <span className="text-[11px] text-slate-500 block mt-0.5">Environmental Tailings &amp; Assays</span>
         </div>
 
         <div
           onClick={() => onSelectTab('clients')}
-          className="pt-2 md:pt-0 md:px-4 cursor-pointer hover:opacity-80 transition-opacity"
+          className="p-3 sm:p-2.5 rounded-xl sm:rounded-none bg-slate-50/70 sm:bg-transparent border sm:border-0 border-slate-100 sm:border-l sm:border-slate-100 cursor-pointer hover:opacity-80 transition-opacity"
         >
           <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
             Commercial Client Pipeline
           </span>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-900">
+            <span className="text-xl sm:text-2xl font-black text-slate-900">
               ${(metrics.totalContractValue || 425000).toLocaleString()}
             </span>
           </div>
@@ -580,8 +580,8 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
       {/* ─── MIDDLE SECTION: Project Progress Bar Chart & Team Members (DurXen Architecture) ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Project Progress (approx 65% width) */}
-        <div className="lg:col-span-8 bg-[#0f172a] border border-slate-800 rounded-3xl p-6 shadow-xl text-white flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-6 pb-3 border-b border-slate-800/80">
+        <div className="lg:col-span-8 bg-[#0f172a] border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl text-white flex flex-col justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6 pb-3 border-b border-slate-800/80">
             <div>
               <h3 className="text-base font-black text-white tracking-tight">Project Progress</h3>
               <p className="text-xs text-slate-400 mt-0.5">
@@ -596,7 +596,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
           </div>
 
           {/* Bar Chart matching screenshot aesthetic */}
-          <div className="h-64 sm:h-72 w-full">
+          <div className="h-52 sm:h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={monthlyProgressData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
@@ -655,7 +655,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
         </div>
 
         {/* Right Column: Team Members (approx 35% width) */}
-        <div className="lg:col-span-4 bg-[#0f172a] border border-slate-800 rounded-3xl p-6 shadow-xl text-white flex flex-col justify-between">
+        <div className="lg:col-span-4 bg-[#0f172a] border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl text-white flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800/80">
               <h3 className="text-base font-black text-white tracking-tight">Team Members</h3>
@@ -704,7 +704,7 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
       </div>
 
       {/* ─── BOTTOM SECTION: Recent Activities & Cadastre Tasks Table ─────── */}
-      <div className="bg-[#0f172a] border border-slate-800 rounded-3xl p-6 shadow-xl text-white">
+      <div className="bg-[#0f172a] border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl text-white">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-3 border-b border-slate-800/80">
           <div>
             <h3 className="text-base font-black text-white tracking-tight">Recent Activities</h3>
@@ -713,8 +713,8 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="inline-flex rounded-xl bg-slate-800/70 p-1 border border-slate-700/60 text-xs font-bold">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 max-w-full">
+            <div className="inline-flex rounded-xl bg-slate-800/70 p-1 border border-slate-700/60 text-xs font-bold shrink-0">
               <button
                 onClick={() => setActivityFilter('all')}
                 className={`px-3 py-1 rounded-lg transition-all ${

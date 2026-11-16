@@ -119,22 +119,22 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-30 bg-[#2a602f] border-b border-[#235027] text-white shadow-md font-['Outfit',sans-serif]">
-      <div className="max-w-[120rem] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20 gap-4">
+      <div className="max-w-[120rem] mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-20 gap-2 sm:gap-4">
           {/* Left: Mobile Menu Toggle + Branding */}
-          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             <button
               onClick={onToggleSidebar}
-              className="lg:hidden p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-colors"
+              className="lg:hidden p-1.5 sm:p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-colors cursor-pointer"
               aria-label="Toggle Navigation"
             >
-              <Menu size={20} />
+              <Menu size={18} className="sm:w-5 sm:h-5" />
             </button>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <a href="/" className="flex items-center gap-2 group" title="Return to Public Website">
-                <div className="p-1.5 bg-white rounded-xl border border-white/40 shadow-sm group-hover:scale-105 transition-transform">
-                  <Logo className="h-8 w-8 sm:h-9 sm:w-9" />
+                <div className="p-1 sm:p-1.5 bg-white rounded-xl border border-white/40 shadow-sm group-hover:scale-105 transition-transform">
+                  <Logo className="h-7 w-7 sm:h-9 sm:w-9" />
                 </div>
               </a>
               <div className="hidden sm:block">
@@ -182,14 +182,14 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
           </div>
 
           {/* Right: Role Switcher, Notifications & User Session */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Role Badge / Super Admin Switcher */}
-            <div className="relative">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            {/* Role Badge / Super Admin Switcher (hidden on mobile to prevent clipping) */}
+            <div className="relative hidden sm:block">
               {currentUser.role === 'super_admin' ? (
                 <>
                   <button
                     onClick={() => setShowRoleMenu(!showRoleMenu)}
-                    className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white text-slate-900 border border-slate-200 text-xs font-bold transition-all shadow-sm hover:bg-slate-50 cursor-pointer"
+                    className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white text-slate-900 border border-slate-200 text-xs font-bold transition-all shadow-sm hover:bg-slate-50 cursor-pointer"
                     title="Super Admin Role Preview Switcher"
                   >
                     <Shield size={13} className="shrink-0 text-[#2a602f]" />
@@ -242,7 +242,7 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
                 </>
               ) : (
                 <div
-                  className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white text-slate-900 border border-slate-200 text-xs font-bold shadow-sm"
+                  className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-white text-slate-900 border border-slate-200 text-xs font-bold shadow-sm"
                   title="Official Departmental Credential Role"
                 >
                   <Shield size={13} className="shrink-0 text-[#2a602f]" />
@@ -256,7 +256,7 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
             {currentUser.role === 'super_admin' && (
               <button
                 onClick={() => onSelectTab('security')}
-                className={`relative p-2 rounded-xl transition-colors shadow-sm flex items-center justify-center ${
+                className={`relative p-1.5 sm:p-2 rounded-xl transition-colors shadow-sm flex items-center justify-center cursor-pointer ${
                   crmService.getFailedLoginAttempts().length > 0
                     ? 'bg-rose-500 hover:bg-rose-600 text-white animate-pulse'
                     : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
@@ -264,7 +264,7 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
                 title="Super Admin Threat Monitoring & Failed Login Telemetry"
                 aria-label="Security Monitoring"
               >
-                <Shield size={18} className="text-[#ffc30d]" />
+                <Shield size={16} className="sm:w-[18px] sm:h-[18px] text-[#ffc30d]" />
                 {crmService.getFailedLoginAttempts().length > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 border border-white text-white text-[9px] font-black flex items-center justify-center shadow-sm">
                     {crmService.getFailedLoginAttempts().length}
@@ -277,11 +277,11 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
             <div className="relative">
               <button
                 onClick={() => setShowNotifMenu(!showNotifMenu)}
-                className="relative p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-colors shadow-sm"
+                className="relative p-1.5 sm:p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-colors shadow-sm cursor-pointer"
                 title="Statutory Reminders & Alerts"
                 aria-label="View notifications"
               >
-                <Bell size={18} />
+                <Bell size={16} className="sm:w-[18px] sm:h-[18px]" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#ffc30d] text-slate-950 text-[9px] font-black flex items-center justify-center shadow-sm">
                     {unreadCount}
@@ -290,7 +290,7 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
               </button>
 
               {showNotifMenu && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-slate-200 rounded-2xl shadow-2xl p-3 z-50 text-slate-800">
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-1.5rem)] bg-white border border-slate-200 rounded-2xl shadow-2xl p-3 z-50 text-slate-800">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-2">
                     <span className="text-xs font-black uppercase tracking-wider text-slate-900">
                       Statutory Notifications
@@ -346,10 +346,10 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
             </div>
 
             {/* D. Staff Self-Service Profile & Password Dropdown */}
-            <div className="relative pl-2 border-l border-white/20">
+            <div className="relative pl-1.5 sm:pl-2 border-l border-white/20">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex items-center gap-2.5 p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all cursor-pointer shadow-sm active:scale-95"
+                className="flex items-center gap-2 p-1 sm:px-3 sm:py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all cursor-pointer shadow-sm active:scale-95"
                 title="Account Settings & Password"
               >
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#ffc30d] text-slate-950 font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
@@ -372,7 +372,7 @@ export const CRMHeader: React.FC<CRMHeaderProps> = ({
 
               {/* Profile Dropdown Menu */}
               {showProfileMenu && (
-                <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 z-50 text-slate-800 animate-in fade-in slide-in-from-top-2">
+                <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1.5rem)] bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 z-50 text-slate-800 animate-in fade-in slide-in-from-top-2">
                   <div className="p-3 border-b border-slate-100 bg-slate-50/70 rounded-xl mb-1">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-xs text-slate-900 truncate">{currentUser.name}</span>
