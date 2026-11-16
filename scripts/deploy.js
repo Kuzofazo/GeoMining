@@ -40,62 +40,71 @@ FTP_REMOTE_DIR=/public_html
     process.exit(1);
   }
 
-  // 1. Build the project
-  console.log('📦 Step 1: Building fresh production distribution...');
-  try {
-    execSync('npm run build', { cwd: projectRoot, stdio: 'inherit' });
-  } catch (err) {
-    console.error('❌ Build failed. Aborting deployment.');
-    process.exit(1);
+  // 1. Build the project (skip if --skip-build passed and dist exists)
+  const distDir = path.resolve(projectRoot, 'dist');
+  const skipBuild = process.argv.includes('--skip-build') && fs.existsSync(distDir);
+
+  if (skipBuild) {
+    console.log('⚡ Step 1: Using existing fresh production build (--skip-build)...');
+  } else {
+    console.log('📦 Step 1: Building fresh production distribution...');
+    try {
+      execSync('npm run build', { cwd: projectRoot, stdio: 'inherit' });
+    } catch (err) {
+      console.error('❌ Build failed. Aborting deployment.');
+      process.exit(1);
+    }
   }
 
-  const distDir = path.resolve(projectRoot, 'dist');
   if (!fs.existsSync(distDir)) {
     console.error('❌ dist directory not found after build!');
     process.exit(1);
   }
 
-  // 2. Connect to FTP
-  const client = new ftp.Client();
-  client.ftp.verbose = false;
-
-  try {
-    console.log(`\n🔌 Step 2: Connecting to HostGator FTP (${host}:${port}) as ${user}...`);
+  async function tryUpload(secure) {
+    const client = new ftp.Client();
+    client.ftp.verbose = false;
+    client.ftp.timeout = 180000; // 3 minutes timeout to prevent control socket drop
     try {
-      // Try explicit TLS first for secure transmission
       await client.access({
         host,
         user,
         password,
         port,
-        secure: true,
+        secure,
         secureOptions: { rejectUnauthorized: false },
       });
-      console.log('🔒 Connected securely via FTPS (TLS).');
-    } catch (tlsErr) {
-      console.log('ℹ️  FTPS unavailable or timed out, trying standard FTP...');
-      await client.access({
-        host,
-        user,
-        password,
-        port,
-        secure: false,
-      });
-      console.log(' Connected via standard FTP.');
+      console.log(secure ? '🔒 Connected securely via FTPS (TLS).' : ' Connected via standard FTP.');
+      console.log(`📂 Destination: ${remoteDir}...`);
+      await client.ensureDir(remoteDir);
+      console.log('📤 Synchronizing files to HostGator...');
+      await client.uploadFromDir(distDir, remoteDir);
+      return true;
+    } finally {
+      client.close();
     }
+  }
 
-    console.log(`📂 Step 3: Navigating to destination: ${remoteDir}...`);
-    await client.ensureDir(remoteDir);
+  console.log(`\n🔌 Step 2: Deploying to HostGator FTP (${host}:${port}) as ${user}...`);
 
-    console.log('📤 Step 4: Synchronizing production files to HostGator public_html...');
-    await client.uploadFromDir(distDir, remoteDir);
-
-    console.log('\n🎉 Deployment completed successfully!');
-    console.log('🌐 Your updates are now live at https://geominingec.com with zero downtime.');
-  } catch (err) {
-    console.error('\n❌ Deployment failed with error:', err.message);
-  } finally {
-    client.close();
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      console.log(`\nAttempt ${attempt}/3...`);
+      // Try FTPS first; fallback to standard FTP if TLS control socket drops
+      const secure = attempt === 1;
+      await tryUpload(secure);
+      console.log('\n🎉 Deployment completed successfully!');
+      console.log('🌐 Your updates are now live at https://geominingec.com with zero downtime.');
+      return;
+    } catch (err) {
+      console.warn(`⚠️ Attempt ${attempt} failed: ${err.message}`);
+      if (attempt < 3) {
+        console.log('Waiting 4s before next attempt...');
+        await new Promise((r) => setTimeout(r, 4000));
+      } else {
+        console.error('\n❌ All deployment attempts failed.');
+      }
+    }
   }
 }
 
