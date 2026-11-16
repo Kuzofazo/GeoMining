@@ -80,17 +80,17 @@ export const CRMEmployees: React.FC<CRMEmployeesProps> = ({ initialSearch = '' }
   const getRoleBadge = (role: UserRole) => {
     switch (role) {
       case 'super_admin':
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-200">Super Admin</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-200 whitespace-nowrap shrink-0">Super Admin</span>;
       case 'management':
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200">Executive Director</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200 whitespace-nowrap shrink-0">Executive Director</span>;
       case 'administrator':
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-300">Administrator</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-300 whitespace-nowrap shrink-0">Administrator</span>;
       case 'registry_department':
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-[#2a602f] border border-emerald-200">Registry Dept</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-[#2a602f] border border-emerald-200 whitespace-nowrap shrink-0">Registry Dept</span>;
       case 'compliance_officer':
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">Compliance</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200 whitespace-nowrap shrink-0">Compliance</span>;
       default:
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">{role}</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 whitespace-nowrap shrink-0">{role}</span>;
     }
   };
 
@@ -146,38 +146,40 @@ export const CRMEmployees: React.FC<CRMEmployeesProps> = ({ initialSearch = '' }
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs font-bold">
-            <button
-              onClick={() => setActiveSubTab('directory')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeSubTab === 'directory' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Personnel Directory
-            </button>
-            <button
-              onClick={() => setActiveSubTab('departments')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeSubTab === 'departments' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Departments & Org
-            </button>
-            <button
-              onClick={() => setActiveSubTab('performance')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeSubTab === 'performance' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Performance Reports
-            </button>
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <div className="w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+            <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs font-bold whitespace-nowrap min-w-full sm:min-w-0">
+              <button
+                onClick={() => setActiveSubTab('directory')}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg transition-all text-center ${
+                  activeSubTab === 'directory' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Personnel Directory
+              </button>
+              <button
+                onClick={() => setActiveSubTab('departments')}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg transition-all text-center ${
+                  activeSubTab === 'departments' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Departments &amp; Org
+              </button>
+              <button
+                onClick={() => setActiveSubTab('performance')}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg transition-all text-center ${
+                  activeSubTab === 'performance' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Performance Reports
+              </button>
+            </div>
           </div>
 
           {activeSubTab === 'performance' && (
             <button
               onClick={handleExportPerformanceCSV}
-              className="px-3 py-2 rounded-xl bg-[#2a602f] hover:bg-[#224f26] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+              className="w-full sm:w-auto px-3 py-2 rounded-xl bg-[#2a602f] hover:bg-[#224f26] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all"
             >
               <Download size={14} />
               <span>Export CSV</span>
@@ -226,34 +228,36 @@ export const CRMEmployees: React.FC<CRMEmployeesProps> = ({ initialSearch = '' }
               return (
                 <div
                   key={emp.userId}
-                  className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                  className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
                 >
                   <div>
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-2xl bg-[#2a602f]/10 text-[#2a602f] font-black text-base flex items-center justify-center border border-[#2a602f]/20">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 sm:gap-2 mb-3">
+                      <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-[#2a602f]/10 text-[#2a602f] font-black text-sm sm:text-base flex items-center justify-center border border-[#2a602f]/20 shrink-0 mt-0.5 sm:mt-0">
                           {emp.userName
                             .split(' ')
                             .map((n) => n[0])
                             .slice(0, 2)
                             .join('')}
                         </div>
-                        <div>
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-black bg-slate-100 text-slate-700 border border-slate-200">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-black bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
                               {emp.employeeId || userObj?.employeeId || emp.userId}
                             </span>
-                            <h4 className="font-bold text-slate-900 text-sm leading-tight">{emp.userName}</h4>
+                            <h4 className="font-bold text-slate-900 text-xs sm:text-sm leading-tight">{emp.userName}</h4>
                           </div>
                           {(emp.position || userObj?.position) && (
-                            <span className="text-[11px] font-bold text-[#2a602f] block leading-tight">
+                            <span className="text-[11px] font-bold text-[#2a602f] block leading-tight truncate">
                               {emp.position || userObj?.position}
                             </span>
                           )}
-                          <span className="text-[10px] text-slate-400 block font-mono">{emp.userEmail}</span>
+                          <span className="text-[10px] text-slate-400 block font-mono truncate">{emp.userEmail}</span>
                         </div>
                       </div>
-                      {getRoleBadge(emp.role)}
+                      <div className="self-start sm:self-auto shrink-0 pl-12 sm:pl-0">
+                        {getRoleBadge(emp.role)}
+                      </div>
                     </div>
 
                     <div className="space-y-1.5 py-3 border-y border-slate-100 text-xs">

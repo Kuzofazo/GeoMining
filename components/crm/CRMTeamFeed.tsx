@@ -96,13 +96,13 @@ export const CRMTeamFeed: React.FC = () => {
   const getCategoryBadge = (category: TeamMessage['category']) => {
     switch (category) {
       case 'announcement':
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1"><Megaphone size={10} /> Announcement</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1 whitespace-nowrap shrink-0"><Megaphone size={10} /> Announcement</span>;
       case 'urgent':
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-100 text-red-800 border border-red-200 flex items-center gap-1"><AlertCircle size={10} /> Urgent Notice</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-100 text-red-800 border border-red-200 flex items-center gap-1 whitespace-nowrap shrink-0"><AlertCircle size={10} /> Urgent Notice</span>;
       case 'operational':
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-[#2a602f] border border-emerald-200">Operational</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-[#2a602f] border border-emerald-200 whitespace-nowrap shrink-0">Operational</span>;
       default:
-        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">General</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap shrink-0">General</span>;
     }
   };
 
@@ -143,7 +143,7 @@ export const CRMTeamFeed: React.FC = () => {
       </div>
 
       {/* Broadcast Form Card */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 mb-3 text-xs font-bold text-slate-700">
           <span className="w-2 h-2 rounded-full bg-[#2a602f]" />
           <span>Broadcast Departmental Update as {currentUser?.name}</span>
@@ -167,12 +167,12 @@ export const CRMTeamFeed: React.FC = () => {
             className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2a602f] focus:bg-white resize-none"
           />
 
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
             <div className="flex items-center gap-3">
               <select
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value as any)}
-                className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:outline-none"
+                className="flex-1 sm:flex-initial px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 focus:outline-none cursor-pointer"
               >
                 <option value="operational">Operational</option>
                 <option value="announcement">Announcement</option>
@@ -181,7 +181,7 @@ export const CRMTeamFeed: React.FC = () => {
               </select>
 
               {(isSuperAdmin || isAdmin) && (
-                <label className="flex items-center gap-1.5 text-xs text-slate-600 font-semibold cursor-pointer">
+                <label className="flex items-center gap-1.5 text-xs text-slate-600 font-semibold cursor-pointer shrink-0">
                   <input
                     type="checkbox"
                     checked={newPinned}
@@ -195,7 +195,7 @@ export const CRMTeamFeed: React.FC = () => {
 
             <button
               type="submit"
-              className="px-4 py-2 rounded-xl bg-[#2a602f] hover:bg-[#224f26] text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
+              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#2a602f] hover:bg-[#224f26] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
             >
               <Send size={13} />
               <span>Broadcast Update</span>
@@ -212,32 +212,32 @@ export const CRMTeamFeed: React.FC = () => {
           return (
             <div
               key={msg.id}
-              className={`bg-white rounded-2xl border shadow-sm p-5 transition-all ${
+              className={`bg-white rounded-2xl border shadow-sm p-4 sm:p-5 transition-all ${
                 msg.isPinned
                   ? 'border-emerald-300 ring-2 ring-emerald-100/50'
                   : 'border-slate-200'
               }`}
             >
               {/* Header */}
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-slate-100 text-slate-700 font-black text-sm flex items-center justify-center border border-slate-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 mb-3">
+                <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-slate-100 text-slate-700 font-black text-xs sm:text-sm flex items-center justify-center border border-slate-200 shrink-0 mt-0.5 sm:mt-0">
                     {msg.authorName
                       .split(' ')
                       .map((n) => n[0])
                       .slice(0, 2)
                       .join('')}
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
                       <h4 className="font-bold text-slate-900 text-xs sm:text-sm">{msg.authorName}</h4>
-                      <span className="text-[10px] text-slate-400 font-medium">({msg.authorDepartment})</span>
+                      <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">({msg.authorDepartment})</span>
                     </div>
-                    <span className="text-[10px] text-slate-400 block">{msg.timestamp}</span>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">{msg.timestamp}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 self-start sm:self-auto shrink-0 pl-11 sm:pl-0">
                   {getCategoryBadge(msg.category)}
                   {msg.isPinned && (
                     <span className="p-1 rounded-lg bg-emerald-50 text-[#2a602f]" title="Pinned message">

@@ -223,7 +223,7 @@ export const CRMTasks: React.FC<CRMTasksProps> = ({ initialSearch = '' }) => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs font-bold">
             <button
               onClick={() => setViewMode('board')}
@@ -245,7 +245,7 @@ export const CRMTasks: React.FC<CRMTasksProps> = ({ initialSearch = '' }) => {
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2.5 rounded-xl bg-[#2a602f] hover:bg-[#224f26] text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#2a602f] hover:bg-[#224f26] text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
           >
             <Plus size={16} />
             <span>Assign Daily Task</span>
@@ -494,72 +494,74 @@ export const CRMTasks: React.FC<CRMTasksProps> = ({ initialSearch = '' }) => {
       ) : (
         /* List View */
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-                <th className="py-3 px-4">Task & Category</th>
-                <th className="py-3 px-4">Assigned Officer</th>
-                <th className="py-3 px-4">Priority</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Deadline</th>
-                <th className="py-3 px-4">Checklist</th>
-                <th className="py-3 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredTasks.map((task) => {
-                const isOverdue = task.status !== 'completed' && task.dueDate < todayStr;
-                const isToday = task.status !== 'completed' && task.dueDate === todayStr;
-                const completedCount = task.checklist.filter((c) => c.completed).length;
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                  <th className="py-3 px-4">Task &amp; Category</th>
+                  <th className="py-3 px-4">Assigned Officer</th>
+                  <th className="py-3 px-4">Priority</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Deadline</th>
+                  <th className="py-3 px-4">Checklist</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredTasks.map((task) => {
+                  const isOverdue = task.status !== 'completed' && task.dueDate < todayStr;
+                  const isToday = task.status !== 'completed' && task.dueDate === todayStr;
+                  const completedCount = task.checklist.filter((c) => c.completed).length;
 
-                return (
-                  <tr key={task.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3.5 px-4 max-w-xs">
-                      <div className="font-bold text-slate-900 leading-snug line-clamp-1">{task.title}</div>
-                      <div className="text-[10px] text-slate-400 uppercase font-semibold mt-0.5">{task.category}</div>
-                    </td>
+                  return (
+                    <tr key={task.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-3.5 px-4 max-w-xs">
+                        <div className="font-bold text-slate-900 leading-snug line-clamp-1">{task.title}</div>
+                        <div className="text-[10px] text-slate-400 uppercase font-semibold mt-0.5">{task.category}</div>
+                      </td>
 
-                    <td className="py-3.5 px-4 whitespace-nowrap">
-                      <div className="font-bold text-slate-800">{task.assignedToName}</div>
-                      <div className="text-[10px] text-slate-500">{task.department}</div>
-                    </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="font-bold text-slate-800">{task.assignedToName}</div>
+                        <div className="text-[10px] text-slate-500">{task.department}</div>
+                      </td>
 
-                    <td className="py-3.5 px-4 whitespace-nowrap">{getPriorityBadge(task.priority)}</td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">{getPriorityBadge(task.priority)}</td>
 
-                    <td className="py-3.5 px-4 whitespace-nowrap">{getStatusBadge(task.status)}</td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">{getStatusBadge(task.status)}</td>
 
-                    <td className="py-3.5 px-4 whitespace-nowrap">
-                      <div
-                        className={`font-bold flex items-center gap-1.5 ${
-                          isOverdue ? 'text-red-600' : isToday ? 'text-amber-600' : 'text-slate-600'
-                        }`}
-                      >
-                        <Calendar size={13} />
-                        <span>{task.dueDate}</span>
-                        {isOverdue && <span className="px-1.5 py-0.2 rounded bg-red-100 text-red-700 text-[9px]">LATE</span>}
-                      </div>
-                    </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div
+                          className={`font-bold flex items-center gap-1.5 ${
+                            isOverdue ? 'text-red-600' : isToday ? 'text-amber-600' : 'text-slate-600'
+                          }`}
+                        >
+                          <Calendar size={13} />
+                          <span>{task.dueDate}</span>
+                          {isOverdue && <span className="px-1.5 py-0.2 rounded bg-red-100 text-red-700 text-[9px]">LATE</span>}
+                        </div>
+                      </td>
 
-                    <td className="py-3.5 px-4 whitespace-nowrap">
-                      <span className="font-bold text-slate-700">
-                        {completedCount} / {task.checklist.length}
-                      </span>
-                    </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="font-bold text-slate-700">
+                          {completedCount} / {task.checklist.length}
+                        </span>
+                      </td>
 
-                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => setSelectedTask(task)}
-                        className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs inline-flex items-center gap-1 transition-all"
-                      >
-                        <Eye size={12} />
-                        <span>Inspect</span>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => setSelectedTask(task)}
+                          className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs inline-flex items-center gap-1 transition-all"
+                        >
+                          <Eye size={12} />
+                          <span>Inspect</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

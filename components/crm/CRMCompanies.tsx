@@ -344,10 +344,10 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Module Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-emerald-50 text-[#2d5a27] rounded-xl">
+            <div className="p-2 bg-emerald-50 text-[#2d5a27] rounded-xl shrink-0">
               <Building2 size={20} />
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight">
@@ -359,12 +359,12 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={handleManualSync}
             disabled={isSyncing}
             title="Synchronize records with persistent backend database"
-            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all shadow-xs disabled:opacity-60 cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all shadow-xs disabled:opacity-60 cursor-pointer shrink-0"
           >
             <RefreshCw size={14} className={`text-emerald-600 ${isSyncing ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{isSyncing ? 'Syncing...' : 'Sync Database'}</span>
@@ -375,9 +375,9 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
                 setSubmitError(null);
                 setShowAddModal(true);
               }}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2a602f] hover:bg-emerald-800 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 shrink-0 cursor-pointer"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl bg-[#2a602f] hover:bg-emerald-800 text-white text-xs font-black uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer text-center"
             >
-              <Plus size={16} className="text-[#ffc30d]" />
+              <Plus size={16} className="text-[#ffc30d] shrink-0" />
               <span>New Company Registration</span>
             </button>
           )}
@@ -456,7 +456,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
 
       {/* Cadastral Officer Intake & Accountability Provenance Tracker (Super Admin, Executive Director, Registry Boss) */}
       {canTrackRegistrations && (
-        <div className="bg-gradient-to-r from-emerald-50/80 via-white to-slate-50 border-2 border-[#2a602f]/20 rounded-3xl p-5 shadow-sm">
+        <div className="bg-gradient-to-r from-emerald-50/80 via-white to-slate-50 border-2 border-[#2a602f]/20 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
               <div className="p-3 bg-[#2a602f] text-white rounded-2xl shadow-sm shrink-0">
@@ -482,14 +482,14 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
             </div>
 
             {/* Officer Filter & Audit Trigger */}
-            <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
-              <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-2xs">
-                <UserCheck size={14} className="text-[#2a602f]" />
-                <span className="text-[10px] font-black uppercase text-slate-400">Filter Officer:</span>
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-2.5 w-full lg:w-auto">
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-3 py-2 sm:py-1.5 shadow-2xs w-full sm:w-auto">
+                <UserCheck size={14} className="text-[#2a602f] shrink-0" />
+                <span className="text-[10px] font-black uppercase text-slate-400 shrink-0">Filter Officer:</span>
                 <select
                   value={officerFilter}
                   onChange={(e) => setOfficerFilter(e.target.value)}
-                  className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
+                  className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer flex-1 min-w-0"
                 >
                   <option value="all">All Submitting Officers ({companies.length})</option>
                   <option value="Eric S. Myers">Eric S. Myers (Lead License Registrar)</option>
@@ -509,7 +509,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
               {officerFilter !== 'all' && (
                 <button
                   onClick={() => setOfficerFilter('all')}
-                  className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-bold cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-bold cursor-pointer text-center"
                 >
                   Clear Filter
                 </button>
@@ -517,7 +517,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
 
               <button
                 onClick={() => setShowOfficerAuditModal(true)}
-                className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm cursor-pointer transition-colors"
+                className="w-full sm:w-auto justify-center px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm cursor-pointer transition-colors"
               >
                 <Activity size={14} className="text-[#ffc30d]" />
                 <span>Officer Audit Trail</span>
@@ -540,12 +540,12 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full md:w-auto">
           {/* Status Filter */}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            className="w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500"
           >
             <option value="all">All Statuses ({companies.length})</option>
             <option value="active">Active</option>
@@ -560,7 +560,7 @@ export const CRMCompanies: React.FC<CRMCompaniesProps> = ({ initialSearch = '' }
           <select
             value={entityFilter}
             onChange={(e) => setEntityFilter(e.target.value)}
-            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            className="w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500"
           >
             <option value="all">All Entity Types</option>
             <option value="Corporation">Corporation</option>
